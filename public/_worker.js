@@ -33,62 +33,138 @@ function ownerPage(env, token) {
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Owner Panel — Ultimate License</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
+<style>
+.owner-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:14px; }
+.owner-grid label { display:flex; flex-direction:column; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9aa3b2; }
+.owner-grid input, .owner-grid select {
+  margin-top:4px; padding:9px 11px; border-radius:8px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(212,175,55,0.18);
+  color:#e8eaed; font-family:inherit; font-size:13px; outline:none;
+}
+.owner-grid input:focus, .owner-grid select:focus { border-color:rgba(0,212,255,0.55); box-shadow:0 0 0 3px rgba(0,212,255,0.08); }
+.row-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+.output {
+  background:rgba(0,0,0,0.35); border:1px solid rgba(212,175,55,0.14);
+  border-radius:10px; padding:14px; color:#cfd6e2; font-size:11.5px;
+  font-family:'SF Mono','Menlo','Consolas',monospace; line-height:1.55;
+  white-space:pre-wrap; word-break:break-all; max-height:340px; overflow:auto;
+}
+.kbd { display:inline-block; padding:1px 6px; border-radius:4px; background:rgba(212,175,55,0.12); color:#d4af37; font-size:10.5px; font-family:monospace; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-bottom:18px; }
+.stat { padding:14px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(212,175,55,0.12); }
+.stat .num { font-size:24px; font-weight:600; color:#d4af37; letter-spacing:-0.02em; }
+.stat .lbl { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#9aa3b2; margin-top:3px; }
+</style>
 </head><body>
-<div class="container" style="max-width:720px;margin:24px auto;">
-<h1 class="title">Owner Panel</h1>
-<p class="muted">Ultimate License — private control panel</p>
-
-<section class="card">
-<h2 class="section">Issue Keys</h2>
-<form id="issueForm">
-<div class="grid">
-<label>Type
-<select name="type" id="type">
-<option value="free">Free Trial (2 days)</option>
-<option value="premium_2w">Premium — $3 / 2 weeks</option>
-<option value="premium_1m">Premium — $5 / 1 month</option>
-</select>
-</label>
-<label>Plan
-<select name="plan" id="plan">
-<option value="single">Single key</option>
-<option value="bulk">Bulk (count)</option>
-</select>
-</label>
-<label>Count
-<input type="number" name="count" id="count" value="1" min="1" max="500">
-</label>
-<label>Note
-<input type="text" name="note" placeholder="optional">
-</label>
+<div class="container">
+<div class="brand">
+  <div class="brand-mark">UL</div>
+  <div>
+    <div class="brand-title">Ultimate License</div>
+    <div class="brand-sub">Owner Control Panel</div>
+  </div>
 </div>
-<button class="btn primary" type="submit">Generate</button>
-</form>
-<pre id="issued" class="output"></pre>
+
+<div class="stat-grid" id="stats">
+  <div class="stat"><div class="num" id="statTotal">—</div><div class="lbl">Active Keys</div></div>
+  <div class="stat"><div class="num" id="statFree">—</div><div class="lbl">Free Trials</div></div>
+  <div class="stat"><div class="num" id="statPrem">—</div><div class="lbl">Premium</div></div>
+  <div class="stat"><div class="num" id="statPending">—</div><div class="lbl">Pending</div></div>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2 class="section">Issue Keys</h2>
+    <span class="pill">Generate</span>
+  </div>
+  <form id="issueForm">
+    <div class="owner-grid">
+      <label>Type
+        <select name="type" id="type">
+          <option value="free">Free Trial · 2 days</option>
+          <option value="premium_2w">Premium · $3 · 2 weeks</option>
+          <option value="premium_1m">Premium · $5 · 1 month</option>
+        </select>
+      </label>
+      <label>Plan
+        <select name="plan" id="plan">
+          <option value="single">Single key</option>
+          <option value="bulk">Bulk</option>
+        </select>
+      </label>
+      <label>Count
+        <input type="number" name="count" id="count" value="1" min="1" max="500">
+      </label>
+      <label>Note
+        <input type="text" name="note" placeholder="optional">
+      </label>
+    </div>
+    <div class="row-actions">
+      <button class="btn primary" type="submit">Generate Keys</button>
+      <button class="btn ghost" type="button" id="copyBtn" disabled>Copy Last</button>
+    </div>
+  </form>
+  <div class="output" id="issued" style="margin-top:14px;">Output will appear here.</div>
 </section>
 
 <section class="card">
-<h2 class="section">Pending Premium Approvals</h2>
-<button class="btn" id="loadPending">Load pending</button>
-<pre id="pending" class="output"></pre>
+  <div class="card-head">
+    <h2 class="section">Pending Premium Approvals</h2>
+    <button class="btn ghost" type="button" id="loadPending">Refresh</button>
+  </div>
+  <div class="output" id="pending">Click Refresh to load pending requests.</div>
 </section>
 
 <section class="card">
-<h2 class="section">All Active Keys</h2>
-<button class="btn" id="loadAll">Load all</button>
-<pre id="allkeys" class="output"></pre>
+  <div class="card-head">
+    <h2 class="section">All Active Keys</h2>
+    <button class="btn ghost" type="button" id="loadAll">Refresh</button>
+  </div>
+  <div class="output" id="allkeys">Click Refresh to list all keys.</div>
 </section>
 
+<div class="footer-note">
+  <span class="kbd">/owner/&lt;token&gt;</span> · keep this URL private. Anyone with it controls keys.
+</div>
 </div>
 
 <script>
 const TOKEN = ${JSON.stringify(token)};
 const API = (sub) => "/owner/" + TOKEN + "/api/" + sub;
+
 async function api(sub, body) {
   const r = await fetch(API(sub), { method: "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : "{}" });
   return r.json();
 }
+
+function fmt(v) {
+  if (v === undefined || v === null) return "—";
+  return v;
+}
+
+function renderStats(all, pending) {
+  const total = all.length;
+  const free = all.filter(k => k.type === "free").length;
+  const prem = all.filter(k => (k.type || "").startsWith("premium")).length;
+  document.getElementById("statTotal").textContent = fmt(total);
+  document.getElementById("statFree").textContent = fmt(free);
+  document.getElementById("statPrem").textContent = fmt(prem);
+  document.getElementById("statPending").textContent = fmt(pending.length);
+}
+
+async function refreshAll() {
+  const [allRes, pendRes] = await Promise.all([api("list", {}), api("pending", {})]);
+  const all = allRes.keys || [];
+  const pending = pendRes.pending || [];
+  renderStats(all, pending);
+  document.getElementById("allkeys").textContent = JSON.stringify(all, null, 2);
+  document.getElementById("pending").textContent = JSON.stringify(pending, null, 2);
+}
+
 document.getElementById("issueForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const f = new FormData(e.target);
@@ -97,15 +173,21 @@ document.getElementById("issueForm").addEventListener("submit", async (e) => {
   if (plan === "bulk") data.count = parseInt(f.get("count") || "1", 10);
   const res = await api("issue", data);
   document.getElementById("issued").textContent = JSON.stringify(res, null, 2);
+  const btn = document.getElementById("copyBtn");
+  btn.disabled = !(res.generated && res.generated.length);
+  btn.dataset.last = JSON.stringify(res.generated || []);
+  refreshAll();
 });
-document.getElementById("loadPending").onclick = async () => {
-  const res = await api("pending", {});
-  document.getElementById("pending").textContent = JSON.stringify(res, null, 2);
+
+document.getElementById("copyBtn").onclick = async () => {
+  const data = JSON.parse(document.getElementById("copyBtn").dataset.last || "[]");
+  const txt = data.map(k => k.key).join("\\n");
+  try { await navigator.clipboard.writeText(txt); } catch (e) {}
 };
-document.getElementById("loadAll").onclick = async () => {
-  const res = await api("list", {});
-  document.getElementById("allkeys").textContent = JSON.stringify(res, null, 2);
-};
+
+document.getElementById("loadPending").onclick = () => refreshAll();
+document.getElementById("loadAll").onclick = () => refreshAll();
+refreshAll();
 </script>
 </body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "access-control-allow-origin": "*" } });
@@ -117,7 +199,6 @@ async function route(request, env) {
   const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
   const ownerToken = env.OWNER_TOKEN || "";
 
-  // ====== Owner routes ======
   const ownerBase = `/owner/${ownerToken}`;
   if (path === ownerBase || path === ownerBase + "/") return ownerPage(env, ownerToken);
   if (path.startsWith(ownerBase + "/api/")) {
@@ -173,7 +254,6 @@ async function route(request, env) {
     }
   }
 
-  // ====== Public API ======
   if (path === "/api/me") {
     let did = await getDeviceId(request);
     if (!did) did = await newDevice();
