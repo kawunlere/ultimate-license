@@ -1,0 +1,74 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free Trial — Ultimate</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head><body><div class="wrap">
+<a href="/" class="brand"><div class="logo">U</div><div><h1>ULTIMATE<small>FREE TRIAL</small></h1></div></a>
+
+<div class="hero"><h2>Verification Chain</h2><p>Complete the eight-step chain to release your forty-eight-hour license. Auto-issued on completion.</p></div>
+
+<div class="progress"><div id="bar" style="width:0%"></div></div>
+<div style="text-align:center;color:var(--tx2);font-size:12px;margin-bottom:20px"><span id="step">0</span> / 8</div>
+
+<div class="card" id="card">
+<h3><span class="dot"></span><span id="title">Initialize Session</span></h3>
+<div class="meta" id="meta">Establishing your secure device fingerprint. Anti-adblock monitoring active.</div>
+<div class="adbox" id="adbox" style="display:none">
+<div id="monetagSlot" style="min-height:60px"></div>
+<small>Verification slot — engagement tracking on</small>
+</div>
+<button id="nextBtn" class="btn" onclick="nextStep()">Begin</button>
+<pre id="out" class="out" style="display:none"></pre>
+</div>
+
+<footer>Chain sessions expire after 30 minutes of inactivity.</footer>
+</div>
+
+<script>
+let token=null,step=0;
+async function nextStep(){
+  const btn=document.getElementById('nextBtn');
+  btn.disabled=true; btn.textContent='Working…';
+  try{
+    if(step===0){
+      const r=await fetch('/api/free/start',{method:'POST',credentials:'include'});
+      const j=await r.json();
+      if(!j.ok) throw JSON.stringify(j);
+      token=j.token;
+      document.cookie='ult_did='+j.deviceId+';path=/;max-age=31536000;SameSite=Strict';
+    } else if(step<8){
+      const r=await fetch('/api/free/step',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify({token,step})});
+      if(!r.ok) throw await r.text();
+      const j=await r.json();
+      if(!j.ok) throw JSON.stringify(j);
+    }
+    step++;
+    document.getElementById('step').textContent=step;
+    document.getElementById('bar').style.width=(step*12.5)+'%';
+    if(step>=8){
+      document.getElementById('title').textContent='Releasing License';
+      document.getElementById('meta').textContent='Validating progression and binding your device.';
+      const r=await fetch('/api/free/claim',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify({token})});
+      const j=await r.json();
+      if(j.ok){
+        document.getElementById('card').innerHTML='<h3><span class="dot"></span>License Issued</h3><div class="meta">Copy this key into the application to unlock two full days. Multi-device lock active.</div><pre class="out">'+j.key+'</pre><a href="/" class="btn ghost">Return Home</a>';
+      } else {
+        document.getElementById('out').style.display='block';
+        document.getElementById('out').textContent=JSON.stringify(j);
+        btn.disabled=false;
+      }
+      return;
+    }
+    document.getElementById('adbox').style.display='block';
+    document.getElementById('title').textContent='Step '+step+' of 8';
+    document.getElementById('meta').textContent='Confirm this step to advance. Reward unlocks only on full completion.';
+    document.getElementById('monetagSlot').innerHTML='<div style="padding:14px;color:var(--gold);font-size:11px">Ad placement slot '+step+' — paste Monetag code here</div>';
+    btn.disabled=false; btn.textContent='Continue to Step '+(step+1);
+  } catch(e){
+    document.getElementById('out').style.display='block';
+    document.getElementById('out').textContent='Error: '+e;
+    btn.disabled=false; btn.textContent='Retry';
+  }
+}
+</script></body></html>

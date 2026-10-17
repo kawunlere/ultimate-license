@@ -1,0 +1,96 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Premium — Ultimate</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head><body><div class="wrap">
+<a href="/" class="brand"><div class="logo">U</div><div><h1>ULTIMATE<small>PREMIUM</small></h1></div></a>
+
+<div class="hero"><h2>Premium Access</h2><p>Cryptographically billed. Auto-confirmed. Multi-device coverage.</p></div>
+
+<div class="card">
+<h3><span class="dot"></span>Selected Plan</h3>
+<div class="meta" id="planMeta">Loading plan…</div>
+<div class="price" id="planPrice">—</div>
+<ul class="feat">
+<li>Multi-device installation</li>
+<li>No verification chain</li>
+<li>Auto on-chain confirmation</li>
+<li>Instant key delivery</li>
+<li>Priority inbox support</li>
+</ul>
+</div>
+
+<div class="card">
+<h3><span class="dot"></span>Payment — Cryptocurrency</h3>
+<div class="meta">Send the exact USDT-equivalent to one of the addresses below. Our on-chain detector auto-confirms and releases your key within minutes.</div>
+<div class="toolbar">
+<button class="btn ghost" onclick="setCoin('ton')">TON</button>
+<button class="btn ghost" onclick="setCoin('trx')">TRC20</button>
+<button class="btn ghost" onclick="setCoin('evm')">ETH/BNB/ARB</button>
+</div>
+<div id="addrBox" class="addr" onclick="copyAddr()"></div>
+<div id="addrNet" style="color:var(--tx2);font-size:11px;margin-top:8px"></div>
+<div class="warn">Confirm the network before sending. Wrong-chain transfers cannot be recovered. Send only the exact amount for your plan.</div>
+</div>
+
+<div class="card">
+<h3><span class="dot"></span>Submit Transaction</h3>
+<div class="meta">After transfer, paste the transaction hash below. If auto-detection misses it, fallback review within twelve hours.</div>
+<input id="devid" class="inp" placeholder="Device ID — auto-fills">
+<input id="txhash" class="inp" placeholder="Transaction hash / TXID">
+<textarea id="note" class="inp" rows="2" placeholder="Optional note"></textarea>
+<button class="btn" onclick="submitProof()">Submit Transaction</button>
+<div id="status" class="out" style="display:none"></div>
+</div>
+
+<div class="card">
+<h3><span class="dot"></span>Direct Contact</h3>
+<div class="meta" style="line-height:1.9">
+Email: <a href="mailto:kawunlere@gmail.com" style="color:var(--cyan)">kawunlere@gmail.com</a><br>
+Telegram: <a href="https://t.me/+kawunlere" style="color:var(--cyan)">@kawunlere</a>
+</div>
+</div>
+
+<footer>On-chain confirmation typically lands in one to five minutes.</footer>
+</div>
+
+<script>
+const PRICES={14:{p:3,l:'Two Weeks'},30:{p:5,l:'One Month'}};
+const params=new URLSearchParams(location.search);
+const plan=params.get('plan')||'14';
+const cfg=PRICES[plan]||PRICES[14];
+document.getElementById('planMeta').textContent=cfg.l+' coverage — '+cfg.p+' USDT equivalent';
+document.getElementById('planPrice').innerHTML='$'+cfg.p+'<small>'+cfg.l.toUpperCase()+'</small>';
+
+const ADDRS={
+  ton:{addr:'UQBWwSfyVQCx7AGuEJdxtcmXXEFAfAhPxWA5cj2ufEvVWj',net:'TON (The Open Network)',coins:'USDT / GRAM'},
+  trx:{addr:'TSSaNj9xQtvmjp54xGdmipPJUcHbpdhuTH',net:'Tron (TRC20)',coins:'USDT'},
+  evm:{addr:'0xB07F8828e62a2ed3b91033B554d2E1C598d2e1b2',net:'EVM (ERC20 / BEP20 / Arbitrum)',coins:'USDT / USDC / ETH / BNB'}
+};
+function setCoin(c){
+  document.getElementById('addrBox').textContent=ADDRS[c].addr;
+  document.getElementById('addrNet').textContent='Network: '+ADDRS[c].net+' — Accepts: '+ADDRS[c].coins;
+}
+function copyAddr(){
+  navigator.clipboard.writeText(document.getElementById('addrBox').textContent);
+  document.getElementById('addrNet').textContent='Copied — keep address exactly as shown';
+}
+setCoin('ton');
+
+fetch('/api/me',{credentials:'include'}).then(r=>r.json()).then(j=>{if(j&&j.deviceId)document.getElementById('devid').value=j.deviceId;}).catch(()=>{});
+
+async function submitProof(){
+  const data={
+    deviceId:document.getElementById('devid').value.trim(),
+    txHash:document.getElementById('txhash').value.trim(),
+    note:document.getElementById('note').value.trim(),
+    plan
+  };
+  if(!data.deviceId||!data.txHash){alert('Device ID and TX hash required');return;}
+  const r=await fetch('/api/premium/submit',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify(data)});
+  const j=await r.json();
+  document.getElementById('status').style.display='block';
+  document.getElementById('status').textContent=JSON.stringify(j,null,2);
+}
+</script></body></html>
