@@ -190,6 +190,22 @@ refreshAll();
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "access-control-allow-origin": "*" } });
 }
 
+// Strip trailing slash, then resolve a static path to its .html file
+function resolveStatic(path) {
+  let p = path;
+  while (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+  if (p === "" || p === "/") return "/index.html";
+  const known = {
+    "/index": "/index.html",
+    "/free": "/free.html",
+    "/premium": "/premium.html",
+    "/style": "/style.css"
+  };
+  if (known[p]) return known[p];
+  if (p === "/index.html" || p === "/free.html" || p === "/premium.html" || p === "/style.css") return p;
+  return null;
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -378,14 +394,10 @@ async function route(request, env) {
     return j({ ok: true, key, expires: payload.expires });
   }
 
-  // ====== Static fallback for /, /index.html, /free.html, /premium.html, /style.css ======
-  if (path === "/" || path === "/index.html" || path === "/free.html" || path === "/premium.html" || path === "/style.css") {
-    if (env.ASSETS) {
-      try {
-        const file = path === "/" ? "/index.html" : path;
-        return await env.ASSETS.fetch(new URL(file, request.url));
-      } catch (e) {}
-    }
+  // ====== Static fallback — supports /free, /premium, /index, .html versions ======
+  const staticFile = resolveStatic(path);
+  if (staticFile && env.ASSETS) {
+    try { return await env.ASSETS.fetch(new URL(staticFile, request.url)); } catch (e) {}
   }
 
   return j({ ok: false, error: "not_found", path }, 404);
