@@ -14,26 +14,21 @@
 .free-hero h2 { font-size:22px; font-weight:600; margin-bottom:6px; }
 .free-hero p { color:#9aa3b2; font-size:13px; max-width:520px; line-height:1.5; }
 .step-bar { display:flex; gap:6px; margin:18px 0 22px; }
-.step-pip { flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,0.06); transition: background .25s ease; }
-.step-pip.active { background: linear-gradient(90deg, #d4af37, #00d4ff); }
+.step-pip { flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,0.06); }
 .step-pip.done { background:#d4af37; }
+.step-pip.active { background: linear-gradient(90deg, #d4af37, #00d4ff); }
 .step-shell { display:none; }
 .step-shell.active { display:block; }
 .ad-slot {
   background:rgba(255,255,255,0.02); border:1px solid rgba(212,175,55,0.16);
   border-radius:14px; padding:22px; margin:14px 0; min-height:140px;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  text-align:center;
 }
 .ad-slot .ad-frame { width:100%; min-height:90px; }
-.ad-cta { margin-top:14px; }
-.ad-cta button {
-  padding:13px 26px; border-radius:10px; border:none;
-  background:linear-gradient(135deg,#d4af37,#b8941f); color:#0a0a0a;
-  font-weight:600; font-size:13px; letter-spacing:.02em; cursor:pointer;
-  font-family:inherit;
+.timer {
+  font-size:36px; font-weight:600; color:#00d4ff; letter-spacing:0.02em;
+  font-variant-numeric:tabular-nums; margin:8px 0 4px;
 }
-.ad-cta button:disabled { opacity:.4; cursor:not-allowed; }
 .ad-progress { font-size:11px; color:#9aa3b2; margin-top:10px; letter-spacing:.05em; text-transform:uppercase; }
 .final-card {
   background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.22);
@@ -55,7 +50,7 @@
 
 <div class="free-hero">
   <h2>Free Verification Chain</h2>
-  <p>Complete eight short steps to unlock a forty-eight hour trial key. Your device and IP are recorded with the issued key.</p>
+  <p>Eight short steps. A timer unlocks each step. Total time: two minutes.</p>
 </div>
 
 <div class="step-bar" id="bar">
@@ -65,67 +60,44 @@
 </div>
 
 <div id="step1" class="step-shell active">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="next(1)">Continue</button></div>
-  <div class="ad-progress">Step 1 of 8</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
+  <div class="timer" id="timer1">15</div>
+  <div class="ad-progress">Step 1 of 8 · viewing ad</div>
 </div>
-
 <div id="step2" class="step-shell">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="next(2)">Continue</button></div>
-  <div class="ad-progress">Step 2 of 8</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
+  <div class="timer" id="timer2">15</div>
+  <div class="ad-progress">Step 2 of 8 · viewing ad</div>
 </div>
-
 <div id="step3" class="step-shell">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="next(3)">Continue</button></div>
-  <div class="ad-progress">Step 3 of 8</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
+  <div class="timer" id="timer3">15</div>
+  <div class="ad-progress">Step 3 of 8 · viewing ad</div>
 </div>
-
 <div id="step4" class="step-shell">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="next(4)">Continue</button></div>
-  <div class="ad-progress">Step 4 of 8</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
+  <div class="timer" id="timer4">15</div>
+  <div class="ad-progress">Step 4 of 8 · viewing ad</div>
 </div>
-
 <div id="step5" class="step-shell">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="next(5)">Continue</button></div>
-  <div class="ad-progress">Step 5 of 8</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
+  <div class="timer" id="timer5">15</div>
+  <div class="ad-progress">Step 5 of 8 · viewing ad</div>
 </div>
-
 <div id="step6" class="step-shell">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="next(6)">Continue</button></div>
-  <div class="ad-progress">Step 6 of 8</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
+  <div class="timer" id="timer6">15</div>
+  <div class="ad-progress">Step 6 of 8 · viewing ad</div>
 </div>
-
 <div id="step7" class="step-shell">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="next(7)">Continue</button></div>
-  <div class="ad-progress">Step 7 of 8</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
+  <div class="timer" id="timer7">15</div>
+  <div class="ad-progress">Step 7 of 8 · viewing ad</div>
 </div>
-
 <div id="step8" class="step-shell">
-  <div class="ad-slot">
-    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
-  </div>
-  <div class="ad-cta"><button onclick="claim()">Claim Free Key</button></div>
-  <div class="ad-progress">Final Step · Claiming</div>
+  <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
+  <div class="timer" id="timer8">15</div>
+  <div class="ad-progress">Step 8 of 8 · final step</div>
 </div>
 
 <div id="final" class="step-shell">
@@ -133,7 +105,7 @@
     <h3 style="color:#d4af37;font-size:16px;margin-bottom:6px;">Free Key Issued</h3>
     <p style="color:#9aa3b2;font-size:12.5px;">Forty-eight hour trial. Locked to this device and IP.</p>
     <div class="final-key" id="finalKey">…</div>
-    <p style="color:#9aa3b2;font-size:11.5px;margin-top:10px;">Copy this key and paste it into the mod menu. Do not share.</p>
+    <p style="color:#9aa3b2;font-size:11.5px;margin-top:10px;">Copy this key. Do not share.</p>
   </div>
 </div>
 
@@ -141,7 +113,9 @@
 
 <script src="https://quge5.com/88/tag.min.js" data-zone="297480" async data-cfasync="false"></script>
 <script>
+const DELAY = 15;
 let flowId = null;
+let current = 1;
 
 async function start() {
   try {
@@ -151,51 +125,50 @@ async function start() {
   } catch (e) {}
 }
 
-async function next(step) {
-  try {
-    await fetch("/api/free/step", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ flowId, step })
-    });
-  } catch (e) {}
-  document.querySelectorAll(".step-shell").forEach(s => s.classList.remove("active"));
-  const next = document.getElementById("step" + (step + 1));
-  if (next) next.classList.add("active");
-  updateBar(step);
-}
-
-async function claim() {
-  try {
-    const r = await fetch("/api/free/claim", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ flowId })
-    });
-    const d = await r.json();
-    if (d.ok && d.key) {
-      document.getElementById("finalKey").textContent = d.key;
-      document.querySelectorAll(".step-shell").forEach(s => s.classList.remove("active"));
-      document.getElementById("final").classList.add("active");
-      updateBar(8);
-    } else {
-      alert("Claim failed: " + (d.error || "unknown"));
-    }
-  } catch (e) {
-    alert("Network error");
-  }
-}
-
-function updateBar(completed) {
-  const pips = document.querySelectorAll(".step-pip");
-  pips.forEach((p, i) => {
-    p.classList.remove("active", "done");
-    if (i < completed) p.classList.add("done");
-    else if (i === completed) p.classList.add("active");
+async function runStep(n) {
+  return new Promise(async (resolve) => {
+    const timerEl = document.getElementById("timer" + n);
+    let left = DELAY;
+    timerEl.textContent = left;
+    const tick = setInterval(async () => {
+      left -= 1;
+      timerEl.textContent = left;
+      try { await fetch("/api/free/step", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ flowId, step: n }) }); } catch(e) {}
+      if (left <= 0) {
+        clearInterval(tick);
+        resolve();
+      }
+    }, 1000);
   });
 }
 
-start();
+function show(n) {
+  document.querySelectorAll(".step-shell").forEach(s => s.classList.remove("active"));
+  const el = document.getElementById(n === 9 ? "final" : "step" + n);
+  if (el) el.classList.add("active");
+  const pips = document.querySelectorAll(".step-pip");
+  pips.forEach((p, i) => {
+    p.classList.remove("active", "done");
+    if (i < n - 1) p.classList.add("done");
+    else if (i === n - 1) p.classList.add("active");
+  });
+}
+
+async function main() {
+  await start();
+  for (let i = 1; i <= 8; i++) {
+    show(i);
+    await runStep(i);
+  }
+  show(9);
+  try {
+    const r = await fetch("/api/free/claim", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ flowId }) });
+    const d = await r.json();
+    if (d.ok && d.key) document.getElementById("finalKey").textContent = d.key;
+  } catch(e) {}
+}
+
+main();
 </script>
 </body>
 </html>
