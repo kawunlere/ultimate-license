@@ -28,12 +28,7 @@ function setDeviceCookie(headers, deviceId) {
   return headers;
 }
 
-function isOwner(path, env) {
-  const parts = path.split("/").filter(Boolean);
-  return parts[0] === "owner" && parts[1] && parts[1] === (env.OWNER_TOKEN || "");
-}
-
-async function ownerPage(env) {
+function ownerPage(env, token) {
   const html = `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -88,8 +83,10 @@ async function ownerPage(env) {
 </div>
 
 <script>
-async function api(p, body) {
-  const r = await fetch(p, { method: "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : "{}" });
+const TOKEN = ${JSON.stringify(token)};
+const API = (sub) => "/owner/" + TOKEN + "/api/" + sub;
+async function api(sub, body) {
+  const r = await fetch(API(sub), { method: "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : "{}" });
   return r.json();
 }
 document.getElementById("issueForm").addEventListener("submit", async (e) => {
@@ -98,15 +95,15 @@ document.getElementById("issueForm").addEventListener("submit", async (e) => {
   const plan = f.get("plan");
   const data = { type: f.get("type"), note: f.get("note") || "" };
   if (plan === "bulk") data.count = parseInt(f.get("count") || "1", 10);
-  const res = await api("/owner/api/issue", data);
+  const res = await api("issue", data);
   document.getElementById("issued").textContent = JSON.stringify(res, null, 2);
 });
 document.getElementById("loadPending").onclick = async () => {
-  const res = await api("/owner/api/pending", {});
+  const res = await api("pending", {});
   document.getElementById("pending").textContent = JSON.stringify(res, null, 2);
 };
 document.getElementById("loadAll").onclick = async () => {
-  const res = await api("/owner/api/list", {});
+  const res = await api("list", {});
   document.getElementById("allkeys").textContent = JSON.stringify(res, null, 2);
 };
 </script>
@@ -118,11 +115,13 @@ async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
+  const ownerToken = env.OWNER_TOKEN || "";
 
   // ====== Owner routes ======
-  if (path === `/owner/${env.OWNER_TOKEN}` || path === `/owner/${env.OWNER_TOKEN}/`) return ownerPage(env);
-  if (path.startsWith(`/owner/${env.OWNER_TOKEN}/api/`)) {
-    const sub = path.split("/")[4];
+  const ownerBase = `/owner/${ownerToken}`;
+  if (path === ownerBase || path === ownerBase + "/") return ownerPage(env, ownerToken);
+  if (path.startsWith(ownerBase + "/api/")) {
+    const sub = path.substring((ownerBase + "/api/").length);
     const body = request.method === "POST" ? await request.json().catch(() => ({})) : {};
     if (sub === "issue") {
       const type = body.type || "free";
@@ -134,13 +133,14 @@ async function route(request, env) {
       for (let i = 0; i < count; i++) {
         const key = `ULT-${brand}-${rand(4)}-${rand(4)}-${rand(4)}`;
         const payload = { key, type, note, created: Date.now(), expires: Date.now() + ttlDays * 86400 * 1000, status: "active", used: false };
-        try { await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
+        try { if (env.KEYS) await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
         out.push(payload);
       }
       return j({ ok: true, generated: out });
     }
     if (sub === "list") {
       try {
+        if (!env.KEYS) return j({ ok: false, error: "no_kv" });
         const list = await env.KEYS.list({ prefix: "key:" });
         const keys = [];
         for (const k of list.keys) {
@@ -152,6 +152,7 @@ async function route(request, env) {
     }
     if (sub === "pending") {
       try {
+        if (!env.KEYS) return j({ ok: false, error: "no_kv" });
         const list = await env.KEYS.list({ prefix: "prem_req:" });
         const pending = [];
         for (const k of list.keys) {
@@ -162,13 +163,12 @@ async function route(request, env) {
       } catch (e) { return j({ ok: false, error: String(e) }); }
     }
     if (sub === "approve") {
-      const key = body.key, reqId = body.reqId;
+      const reqId = body.reqId;
       const ttlDays = body.type === "premium_2w" ? 14 : 30;
-      const brand = "PREM";
-      const newKey = `ULT-${brand}-${rand(4)}-${rand(4)}-${rand(4)}`;
+      const newKey = `ULT-PREM-${rand(4)}-${rand(4)}-${rand(4)}`;
       const payload = { key: newKey, type: body.type || "premium_1m", note: "manual approve", created: Date.now(), expires: Date.now() + ttlDays * 86400 * 1000, status: "active", used: false };
-      try { await env.KEYS.put("key:" + newKey, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
-      if (reqId) await env.KEYS.delete("prem_req:" + reqId);
+      try { if (env.KEYS) await env.KEYS.put("key:" + newKey, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
+      if (reqId && env.KEYS) await env.KEYS.delete("prem_req:" + reqId);
       return j({ ok: true, key: newKey, expires: payload.expires });
     }
   }
@@ -176,9 +176,7 @@ async function route(request, env) {
   // ====== Public API ======
   if (path === "/api/me") {
     let did = await getDeviceId(request);
-    if (!did) {
-      did = await newDevice();
-    }
+    if (!did) did = await newDevice();
     const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
     setDeviceCookie(headers, did);
     return new Response(JSON.stringify({ deviceId: did, ip, ts: Date.now() }), { status: 200, headers });
@@ -220,7 +218,7 @@ async function route(request, env) {
     if (!did) did = await newDevice();
     const body = await request.json().catch(() => ({}));
     const flowId = body.flowId;
-    if (!env.KEYS) return j({ ok: false, error: "no KV" });
+    if (!env.KEYS) return j({ ok: false, error: "no_kv" });
     const raw = await env.KEYS.get("fstep:" + flowId);
     if (!raw) return j({ ok: false, error: "flow_expired" });
     const data = JSON.parse(raw);
@@ -262,7 +260,9 @@ async function route(request, env) {
     if (data.type.startsWith("premium")) {
       const tier = data.type === "premium_2w" ? "premium_2w" : "premium_1m";
       const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-      setDeviceCookie(headers, (await getDeviceId(request)) || (await newDevice()));
+      let did = await getDeviceId(request);
+      if (!did) did = await newDevice();
+      setDeviceCookie(headers, did);
       return new Response(JSON.stringify({ ok: true, valid: true, type: "premium", tier, expires: data.expires }), { status: 200, headers });
     }
     return j({ ok: false, valid: false, reason: "unknown_type" });
@@ -305,8 +305,6 @@ async function route(request, env) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "access-control-allow-methods": "GET,POST,OPTIONS" } });
-    const url = new URL(request.url);
-    const path = url.pathname;
     try {
       const response = await route(request, env);
       if (response) return response;
