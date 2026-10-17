@@ -1,76 +1,201 @@
-<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Free Trial — Ultimate</title>
+<meta name="monetag" content="6fddface82c1d6765d5c56aba5a49c1d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
-<meta name="monetag" content="6fddface82c1d6765d5c56aba5a49c1d">
-</head><body><div class="wrap">
-<a href="/" class="brand"><div class="logo">U</div><div><h1>ULTIMATE<small>FREE TRIAL</small></h1></div></a>
+<style>
+.free-hero { padding:18px 0 8px; }
+.free-hero h2 { font-size:22px; font-weight:600; margin-bottom:6px; }
+.free-hero p { color:#9aa3b2; font-size:13px; max-width:520px; line-height:1.5; }
+.step-bar { display:flex; gap:6px; margin:18px 0 22px; }
+.step-pip { flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,0.06); transition: background .25s ease; }
+.step-pip.active { background: linear-gradient(90deg, #d4af37, #00d4ff); }
+.step-pip.done { background:#d4af37; }
+.step-shell { display:none; }
+.step-shell.active { display:block; }
+.ad-slot {
+  background:rgba(255,255,255,0.02); border:1px solid rgba(212,175,55,0.16);
+  border-radius:14px; padding:22px; margin:14px 0; min-height:140px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
+}
+.ad-slot .ad-frame { width:100%; min-height:90px; }
+.ad-cta { margin-top:14px; }
+.ad-cta button {
+  padding:13px 26px; border-radius:10px; border:none;
+  background:linear-gradient(135deg,#d4af37,#b8941f); color:#0a0a0a;
+  font-weight:600; font-size:13px; letter-spacing:.02em; cursor:pointer;
+  font-family:inherit;
+}
+.ad-cta button:disabled { opacity:.4; cursor:not-allowed; }
+.ad-progress { font-size:11px; color:#9aa3b2; margin-top:10px; letter-spacing:.05em; text-transform:uppercase; }
+.final-card {
+  background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.22);
+  border-radius:14px; padding:22px; margin-top:18px;
+}
+.final-key {
+  font-family:'SF Mono','Menlo','Consolas',monospace; font-size:14px; color:#00d4ff;
+  background:rgba(0,0,0,0.4); padding:14px; border-radius:8px;
+  word-break:break-all; margin-top:10px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/" class="brand">
+  <div class="logo">U</div>
+  <div><h1>ULTIMATE<small>LICENSE SYSTEM</small></h1></div>
+</a>
 
-<div class="hero"><h2>Verification Chain</h2><p>Complete the eight-step chain to release your forty-eight-hour license. Auto-issued on completion.</p></div>
-
-<div class="progress"><div id="bar" style="width:0%"></div></div>
-<div style="text-align:center;color:var(--tx2);font-size:12px;margin-bottom:20px"><span id="step">0</span> / 8</div>
-
-<div class="card" id="card">
-<h3><span class="dot"></span><span id="title">Initialize Session</span></h3>
-<div class="meta" id="meta">Establishing your secure device fingerprint. Anti-adblock monitoring active.</div>
-<div class="adbox" id="adbox" style="display:none">
-<div id="monetagSlot" style="min-height:60px"></div>
-<small>Verification slot — engagement tracking on</small>
+<div class="free-hero">
+  <h2>Free Verification Chain</h2>
+  <p>Complete eight short steps to unlock a forty-eight hour trial key. Your device and IP are recorded with the issued key.</p>
 </div>
-<button id="nextBtn" class="btn" onclick="nextStep()">Begin</button>
-<pre id="out" class="out" style="display:none"></pre>
+
+<div class="step-bar" id="bar">
+  <div class="step-pip"></div><div class="step-pip"></div><div class="step-pip"></div>
+  <div class="step-pip"></div><div class="step-pip"></div><div class="step-pip"></div>
+  <div class="step-pip"></div><div class="step-pip"></div>
 </div>
 
-<footer>Chain sessions expire after 30 minutes of inactivity.</footer>
+<div id="step1" class="step-shell active">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="next(1)">Continue</button></div>
+  <div class="ad-progress">Step 1 of 8</div>
 </div>
 
+<div id="step2" class="step-shell">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="next(2)">Continue</button></div>
+  <div class="ad-progress">Step 2 of 8</div>
+</div>
+
+<div id="step3" class="step-shell">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="next(3)">Continue</button></div>
+  <div class="ad-progress">Step 3 of 8</div>
+</div>
+
+<div id="step4" class="step-shell">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="next(4)">Continue</button></div>
+  <div class="ad-progress">Step 4 of 8</div>
+</div>
+
+<div id="step5" class="step-shell">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="next(5)">Continue</button></div>
+  <div class="ad-progress">Step 5 of 8</div>
+</div>
+
+<div id="step6" class="step-shell">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="next(6)">Continue</button></div>
+  <div class="ad-progress">Step 6 of 8</div>
+</div>
+
+<div id="step7" class="step-shell">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="next(7)">Continue</button></div>
+  <div class="ad-progress">Step 7 of 8</div>
+</div>
+
+<div id="step8" class="step-shell">
+  <div class="ad-slot">
+    <div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div>
+  </div>
+  <div class="ad-cta"><button onclick="claim()">Claim Free Key</button></div>
+  <div class="ad-progress">Final Step · Claiming</div>
+</div>
+
+<div id="final" class="step-shell">
+  <div class="final-card">
+    <h3 style="color:#d4af37;font-size:16px;margin-bottom:6px;">Free Key Issued</h3>
+    <p style="color:#9aa3b2;font-size:12.5px;">Forty-eight hour trial. Locked to this device and IP.</p>
+    <div class="final-key" id="finalKey">…</div>
+    <p style="color:#9aa3b2;font-size:11.5px;margin-top:10px;">Copy this key and paste it into the mod menu. Do not share.</p>
+  </div>
+</div>
+
+</div>
+
+<script src="https://quge5.com/88/tag.min.js" data-zone="297480" async data-cfasync="false"></script>
 <script>
-let token=null,step=0;
-async function nextStep(){
-  const btn=document.getElementById('nextBtn');
-  btn.disabled=true; btn.textContent='Working…';
-  try{
-    if(step===0){
-      const r=await fetch('/api/free/start',{method:'POST',credentials:'include'});
-      const j=await r.json();
-      if(!j.ok) throw JSON.stringify(j);
-      token=j.token;
-      document.cookie='ult_did='+j.deviceId+';path=/;max-age=31536000;SameSite=Strict';
-    } else if(step<8){
-      const r=await fetch('/api/free/step',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify({token,step})});
-      if(!r.ok) throw await r.text();
-      const j=await r.json();
-      if(!j.ok) throw JSON.stringify(j);
+let flowId = null;
+
+async function start() {
+  try {
+    const r = await fetch("/api/free/start", { method: "POST" });
+    const d = await r.json();
+    flowId = d.flowId;
+  } catch (e) {}
+}
+
+async function next(step) {
+  try {
+    await fetch("/api/free/step", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ flowId, step })
+    });
+  } catch (e) {}
+  document.querySelectorAll(".step-shell").forEach(s => s.classList.remove("active"));
+  const next = document.getElementById("step" + (step + 1));
+  if (next) next.classList.add("active");
+  updateBar(step);
+}
+
+async function claim() {
+  try {
+    const r = await fetch("/api/free/claim", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ flowId })
+    });
+    const d = await r.json();
+    if (d.ok && d.key) {
+      document.getElementById("finalKey").textContent = d.key;
+      document.querySelectorAll(".step-shell").forEach(s => s.classList.remove("active"));
+      document.getElementById("final").classList.add("active");
+      updateBar(8);
+    } else {
+      alert("Claim failed: " + (d.error || "unknown"));
     }
-    step++;
-    document.getElementById('step').textContent=step;
-    document.getElementById('bar').style.width=(step*12.5)+'%';
-    if(step>=8){
-      document.getElementById('title').textContent='Releasing License';
-      document.getElementById('meta').textContent='Validating progression and binding your device.';
-      const r=await fetch('/api/free/claim',{method:'POST',headers:{'content-type':'application/json'},credentials:'include',body:JSON.stringify({token})});
-      const j=await r.json();
-      if(j.ok){
-        document.getElementById('card').innerHTML='<h3><span class="dot"></span>License Issued</h3><div class="meta">Copy this key into the application to unlock two full days. Multi-device lock active.</div><pre class="out">'+j.key+'</pre><a href="/" class="btn ghost">Return Home</a>';
-      } else {
-        document.getElementById('out').style.display='block';
-        document.getElementById('out').textContent=JSON.stringify(j);
-        btn.disabled=false;
-      }
-      return;
-    }
-    document.getElementById('adbox').style.display='block';
-    document.getElementById('title').textContent='Step '+step+' of 8';
-    document.getElementById('meta').textContent='Confirm this step to advance. Reward unlocks only on full completion.';
-    document.getElementById('monetagSlot').innerHTML='<div style="padding:14px;color:var(--gold);font-size:11px">Ad placement slot '+step+' — paste Monetag code here</div>';
-    btn.disabled=false; btn.textContent='Continue to Step '+(step+1);
-  } catch(e){
-    document.getElementById('out').style.display='block';
-    document.getElementById('out').textContent='Error: '+e;
-    btn.disabled=false; btn.textContent='Retry';
+  } catch (e) {
+    alert("Network error");
   }
 }
-</script><script src="https://quge5.com/88/tag.min.js" data-zone="297480" async data-cfasync="false"></script>
-</body></html>
+
+function updateBar(completed) {
+  const pips = document.querySelectorAll(".step-pip");
+  pips.forEach((p, i) => {
+    p.classList.remove("active", "done");
+    if (i < completed) p.classList.add("done");
+    else if (i === completed) p.classList.add("active");
+  });
+}
+
+start();
+</script>
+</body>
+</html>
