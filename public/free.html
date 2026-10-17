@@ -21,15 +21,22 @@
 .step-shell.active { display:block; }
 .ad-slot {
   background:rgba(255,255,255,0.02); border:1px solid rgba(212,175,55,0.16);
-  border-radius:14px; padding:22px; margin:14px 0; min-height:140px;
+  border-radius:14px; padding:22px; margin:14px 0 0; min-height:130px;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
 }
 .ad-slot .ad-frame { width:100%; min-height:90px; }
-.timer {
-  font-size:36px; font-weight:600; color:#00d4ff; letter-spacing:0.02em;
-  font-variant-numeric:tabular-nums; margin:8px 0 4px;
+.btn-watch {
+  margin-top:16px; padding:13px 26px; border-radius:10px; border:none;
+  background:linear-gradient(135deg,#d4af37,#b8941f); color:#0a0a0a;
+  font-weight:600; font-size:13px; letter-spacing:.02em; cursor:pointer;
+  font-family:inherit; width:100%; max-width:340px;
 }
-.ad-progress { font-size:11px; color:#9aa3b2; margin-top:10px; letter-spacing:.05em; text-transform:uppercase; }
+.btn-watch:disabled { opacity:.4; cursor:not-allowed; }
+.timer {
+  font-size:34px; font-weight:600; color:#00d4ff; letter-spacing:0.02em;
+  font-variant-numeric:tabular-nums; margin:18px 0 6px;
+}
+.ad-progress { font-size:11px; color:#9aa3b2; margin-top:8px; letter-spacing:.05em; text-transform:uppercase; }
 .final-card {
   background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.22);
   border-radius:14px; padding:22px; margin-top:18px;
@@ -50,7 +57,7 @@
 
 <div class="free-hero">
   <h2>Free Verification Chain</h2>
-  <p>Eight short steps. A timer unlocks each step. Total time: two minutes.</p>
+  <p>Tap Watch Ad on each step. A timer runs once the ad begins. All eight steps must complete.</p>
 </div>
 
 <div class="step-bar" id="bar">
@@ -61,43 +68,43 @@
 
 <div id="step1" class="step-shell active">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
-  <div class="timer" id="timer1">15</div>
-  <div class="ad-progress">Step 1 of 8 · viewing ad</div>
+  <button class="btn-watch" onclick="beginStep(1)">Watch Ad · Step 1</button>
+  <div class="ad-progress">Step 1 of 8</div>
 </div>
 <div id="step2" class="step-shell">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
-  <div class="timer" id="timer2">15</div>
-  <div class="ad-progress">Step 2 of 8 · viewing ad</div>
+  <button class="btn-watch" onclick="beginStep(2)">Watch Ad · Step 2</button>
+  <div class="ad-progress">Step 2 of 8</div>
 </div>
 <div id="step3" class="step-shell">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
-  <div class="timer" id="timer3">15</div>
-  <div class="ad-progress">Step 3 of 8 · viewing ad</div>
+  <button class="btn-watch" onclick="beginStep(3)">Watch Ad · Step 3</button>
+  <div class="ad-progress">Step 3 of 8</div>
 </div>
 <div id="step4" class="step-shell">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
-  <div class="timer" id="timer4">15</div>
-  <div class="ad-progress">Step 4 of 8 · viewing ad</div>
+  <button class="btn-watch" onclick="beginStep(4)">Watch Ad · Step 4</button>
+  <div class="ad-progress">Step 4 of 8</div>
 </div>
 <div id="step5" class="step-shell">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
-  <div class="timer" id="timer5">15</div>
-  <div class="ad-progress">Step 5 of 8 · viewing ad</div>
+  <button class="btn-watch" onclick="beginStep(5)">Watch Ad · Step 5</button>
+  <div class="ad-progress">Step 5 of 8</div>
 </div>
 <div id="step6" class="step-shell">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
-  <div class="timer" id="timer6">15</div>
-  <div class="ad-progress">Step 6 of 8 · viewing ad</div>
+  <button class="btn-watch" onclick="beginStep(6)">Watch Ad · Step 6</button>
+  <div class="ad-progress">Step 6 of 8</div>
 </div>
 <div id="step7" class="step-shell">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/11303948" async></script></div></div>
-  <div class="timer" id="timer7">15</div>
-  <div class="ad-progress">Step 7 of 8 · viewing ad</div>
+  <button class="btn-watch" onclick="beginStep(7)">Watch Ad · Step 7</button>
+  <div class="ad-progress">Step 7 of 8</div>
 </div>
 <div id="step8" class="step-shell">
   <div class="ad-slot"><div class="ad-frame"><script src="https://uplcm.com/4/10123298" async></script></div></div>
-  <div class="timer" id="timer8">15</div>
-  <div class="ad-progress">Step 8 of 8 · final step</div>
+  <button class="btn-watch" onclick="beginStep(8)">Watch Ad · Step 8</button>
+  <div class="ad-progress">Step 8 of 8 · final</div>
 </div>
 
 <div id="final" class="step-shell">
@@ -113,33 +120,17 @@
 
 <script src="https://quge5.com/88/tag.min.js" data-zone="297480" async data-cfasync="false"></script>
 <script>
-const DELAY = 15;
+const PAUSE = 2;
+const COUNT = 15;
 let flowId = null;
-let current = 1;
+let busy = false;
 
-async function start() {
+async function init() {
   try {
     const r = await fetch("/api/free/start", { method: "POST" });
     const d = await r.json();
     flowId = d.flowId;
   } catch (e) {}
-}
-
-async function runStep(n) {
-  return new Promise(async (resolve) => {
-    const timerEl = document.getElementById("timer" + n);
-    let left = DELAY;
-    timerEl.textContent = left;
-    const tick = setInterval(async () => {
-      left -= 1;
-      timerEl.textContent = left;
-      try { await fetch("/api/free/step", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ flowId, step: n }) }); } catch(e) {}
-      if (left <= 0) {
-        clearInterval(tick);
-        resolve();
-      }
-    }, 1000);
-  });
 }
 
 function show(n) {
@@ -154,21 +145,59 @@ function show(n) {
   });
 }
 
-async function main() {
-  await start();
-  for (let i = 1; i <= 8; i++) {
-    show(i);
-    await runStep(i);
-  }
-  show(9);
-  try {
-    const r = await fetch("/api/free/claim", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ flowId }) });
-    const d = await r.json();
-    if (d.ok && d.key) document.getElementById("finalKey").textContent = d.key;
-  } catch(e) {}
+async function tick(n, sec) {
+  return new Promise(resolve => {
+    const timer = document.createElement("div");
+    timer.className = "timer";
+    timer.id = "liveTimer";
+    timer.textContent = sec;
+    const slot = document.getElementById("step" + n);
+    const btn = slot.querySelector(".btn-watch");
+    btn.parentNode.insertBefore(timer, btn);
+    let left = sec;
+    const i = setInterval(() => {
+      left -= 1;
+      timer.textContent = left;
+      if (left <= 0) { clearInterval(i); timer.remove(); resolve(); }
+    }, 1000);
+  });
 }
 
-main();
+async function beginStep(n) {
+  if (busy) return;
+  busy = true;
+  const slot = document.getElementById("step" + n);
+  const btn = slot.querySelector(".btn-watch");
+  btn.disabled = true;
+  btn.textContent = "Loading ad...";
+  await new Promise(r => setTimeout(r, PAUSE * 1000));
+  btn.textContent = "Watching... 15s";
+  await tick(n, COUNT);
+  try { await fetch("/api/free/step", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ flowId, step: n }) }); } catch(e) {}
+  if (n < 8) {
+    show(n + 1);
+    busy = false;
+  } else {
+    btn.textContent = "Generating key...";
+    try {
+      const r = await fetch("/api/free/claim", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ flowId }) });
+      const d = await r.json();
+      if (d.ok && d.key) {
+        document.getElementById("finalKey").textContent = d.key;
+        show(9);
+      } else {
+        btn.textContent = "Failed · Retry";
+        btn.disabled = false;
+      }
+    } catch(e) {
+      btn.textContent = "Failed · Retry";
+      btn.disabled = false;
+    }
+    busy = false;
+  }
+}
+
+init();
 </script>
 </body>
 </html>
