@@ -141,10 +141,7 @@ async function api(sub, body) {
   return r.json();
 }
 
-function fmt(v) {
-  if (v === undefined || v === null) return "—";
-  return v;
-}
+function fmt(v) { if (v === undefined || v === null) return "—"; return v; }
 
 function renderStats(all, pending) {
   const total = all.length;
@@ -199,6 +196,7 @@ async function route(request, env) {
   const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
   const ownerToken = env.OWNER_TOKEN || "";
 
+  // ====== Owner routes ======
   const ownerBase = `/owner/${ownerToken}`;
   if (path === ownerBase || path === ownerBase + "/") return ownerPage(env, ownerToken);
   if (path.startsWith(ownerBase + "/api/")) {
@@ -254,6 +252,7 @@ async function route(request, env) {
     }
   }
 
+  // ====== Public API ======
   if (path === "/api/me") {
     let did = await getDeviceId(request);
     if (!did) did = await newDevice();
@@ -377,6 +376,16 @@ async function route(request, env) {
     try { await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
     await audit(env, "spenda_auto_issue", { key, plan });
     return j({ ok: true, key, expires: payload.expires });
+  }
+
+  // ====== Static fallback for /, /index.html, /free.html, /premium.html, /style.css ======
+  if (path === "/" || path === "/index.html" || path === "/free.html" || path === "/premium.html" || path === "/style.css") {
+    if (env.ASSETS) {
+      try {
+        const file = path === "/" ? "/index.html" : path;
+        return await env.ASSETS.fetch(new URL(file, request.url));
+      } catch (e) {}
+    }
   }
 
   return j({ ok: false, error: "not_found", path }, 404);
