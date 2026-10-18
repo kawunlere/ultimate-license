@@ -1,204 +1,9 @@
-// =====================================================
-// Ultimate License Worker — single file, no imports
-// =====================================================
+// ============== helpers ==============
+function j(o) { return new Response(JSON.stringify(o), { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } }); }
+function rand(n) { const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < n; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
+function uuid() { return "u-" + rand(8) + "-" + rand(4) + "-" + rand(4) + "-" + rand(4); }
 
-function j(obj, status = 200, extra = {}) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { "content-type": "application/json", "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "access-control-allow-methods": "GET,POST,OPTIONS", ...extra }
-  });
-}
-function rand(n) { const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<n;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
-async function newDevice() { return "dev_" + rand(6) + "_" + Date.now().toString(36); }
-async function getDeviceId(request) {
-  const cookie = request.headers.get("cookie") || "";
-  const m = cookie.match(/ult_did=([^;]+)/);
-  if (m) return m[1];
-  return null;
-}
-async function audit(env, event, data) {
-  try {
-    if (!env.KEYS) return;
-    const key = "audit:" + Date.now() + ":" + rand(4);
-    await env.KEYS.put(key, JSON.stringify({ event, ...data, t: Date.now() }), { expirationTtl: 60 * 60 * 24 * 30 });
-  } catch (e) {}
-}
-function setDeviceCookie(headers, deviceId) {
-  headers.append("set-cookie", `ult_did=${deviceId}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`);
-  return headers;
-}
-
-function ownerPage(env, token) {
-  const html = `<!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Owner Panel — Ultimate License</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css">
-<style>
-.owner-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:14px; }
-.owner-grid label { display:flex; flex-direction:column; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9aa3b2; }
-.owner-grid input, .owner-grid select {
-  margin-top:4px; padding:9px 11px; border-radius:8px;
-  background:rgba(255,255,255,0.04); border:1px solid rgba(212,175,55,0.18);
-  color:#e8eaed; font-family:inherit; font-size:13px; outline:none;
-}
-.owner-grid input:focus, .owner-grid select:focus { border-color:rgba(0,212,255,0.55); box-shadow:0 0 0 3px rgba(0,212,255,0.08); }
-.row-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
-.output {
-  background:rgba(0,0,0,0.35); border:1px solid rgba(212,175,55,0.14);
-  border-radius:10px; padding:14px; color:#cfd6e2; font-size:11.5px;
-  font-family:'SF Mono','Menlo','Consolas',monospace; line-height:1.55;
-  white-space:pre-wrap; word-break:break-all; max-height:340px; overflow:auto;
-}
-.kbd { display:inline-block; padding:1px 6px; border-radius:4px; background:rgba(212,175,55,0.12); color:#d4af37; font-size:10.5px; font-family:monospace; }
-.stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-bottom:18px; }
-.stat { padding:14px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(212,175,55,0.12); }
-.stat .num { font-size:24px; font-weight:600; color:#d4af37; letter-spacing:-0.02em; }
-.stat .lbl { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#9aa3b2; margin-top:3px; }
-</style>
-</head><body>
-<div class="container">
-<div class="brand">
-  <div class="brand-mark">UL</div>
-  <div>
-    <div class="brand-title">Ultimate License</div>
-    <div class="brand-sub">Owner Control Panel</div>
-  </div>
-</div>
-
-<div class="stat-grid" id="stats">
-  <div class="stat"><div class="num" id="statTotal">—</div><div class="lbl">Active Keys</div></div>
-  <div class="stat"><div class="num" id="statFree">—</div><div class="lbl">Free Trials</div></div>
-  <div class="stat"><div class="num" id="statPrem">—</div><div class="lbl">Premium</div></div>
-  <div class="stat"><div class="num" id="statPending">—</div><div class="lbl">Pending</div></div>
-</div>
-
-<section class="card">
-  <div class="card-head">
-    <h2 class="section">Issue Keys</h2>
-    <span class="pill">Generate</span>
-  </div>
-  <form id="issueForm">
-    <div class="owner-grid">
-      <label>Type
-        <select name="type" id="type">
-          <option value="free">Free Trial · 2 days</option>
-          <option value="premium_2w">Premium · $3 · 2 weeks</option>
-          <option value="premium_1m">Premium · $5 · 1 month</option>
-        </select>
-      </label>
-      <label>Plan
-        <select name="plan" id="plan">
-          <option value="single">Single key</option>
-          <option value="bulk">Bulk</option>
-        </select>
-      </label>
-      <label>Count
-        <input type="number" name="count" id="count" value="1" min="1" max="500">
-      </label>
-      <label>Note
-        <input type="text" name="note" placeholder="optional">
-      </label>
-    </div>
-    <div class="row-actions">
-      <button class="btn primary" type="submit">Generate Keys</button>
-      <button class="btn ghost" type="button" id="copyBtn" disabled>Copy Last</button>
-    </div>
-  </form>
-  <div class="output" id="issued" style="margin-top:14px;">Output will appear here.</div>
-</section>
-
-<section class="card">
-  <div class="card-head">
-    <h2 class="section">Pending Premium Approvals</h2>
-    <button class="btn ghost" type="button" id="loadPending">Refresh</button>
-  </div>
-  <div class="output" id="pending">Click Refresh to load pending requests.</div>
-</section>
-
-<section class="card">
-  <div class="card-head">
-    <h2 class="section">All Active Keys</h2>
-    <button class="btn ghost" type="button" id="loadAll">Refresh</button>
-  </div>
-  <div class="output" id="allkeys">Click Refresh to list all keys.</div>
-</section>
-
-<div class="footer-note">
-  <span class="kbd">/owner/&lt;token&gt;</span> · keep this URL private. Anyone with it controls keys.
-</div>
-</div>
-
-<script>
-const TOKEN = ${JSON.stringify(token)};
-const API = (sub) => "/owner/" + TOKEN + "/api/" + sub;
-
-async function api(sub, body) {
-  const r = await fetch(API(sub), { method: "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : "{}" });
-  return r.json();
-}
-
-function fmt(v) { if (v === undefined || v === null) return "—"; return v; }
-
-function renderStats(all, pending) {
-  const total = all.length;
-  const free = all.filter(k => k.type === "free").length;
-  const prem = all.filter(k => (k.type || "").startsWith("premium")).length;
-  document.getElementById("statTotal").textContent = fmt(total);
-  document.getElementById("statFree").textContent = fmt(free);
-  document.getElementById("statPrem").textContent = fmt(prem);
-  document.getElementById("statPending").textContent = fmt(pending.length);
-}
-
-async function refreshAll() {
-  const [allRes, pendRes] = await Promise.all([api("list", {}), api("pending", {})]);
-  const all = allRes.keys || [];
-  const pending = pendRes.pending || [];
-  renderStats(all, pending);
-  document.getElementById("allkeys").textContent = JSON.stringify(all, null, 2);
-  document.getElementById("pending").textContent = JSON.stringify(pending, null, 2);
-}
-
-document.getElementById("issueForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const f = new FormData(e.target);
-  const plan = f.get("plan");
-  const data = { type: f.get("type"), note: f.get("note") || "" };
-  if (plan === "bulk") data.count = parseInt(f.get("count") || "1", 10);
-  const res = await api("issue", data);
-  document.getElementById("issued").textContent = JSON.stringify(res, null, 2);
-  const btn = document.getElementById("copyBtn");
-  btn.disabled = !(res.generated && res.generated.length);
-  btn.dataset.last = JSON.stringify(res.generated || []);
-  refreshAll();
-});
-
-document.getElementById("copyBtn").onclick = async () => {
-  const data = JSON.parse(document.getElementById("copyBtn").dataset.last || "[]");
-  const txt = data.map(k => k.key).join("\\n");
-  try { await navigator.clipboard.writeText(txt); } catch (e) {}
-};
-
-function fmtDate(ms){ if(!ms) return "—"; try{ return new Date(ms).toISOString().slice(0,16).replace("T"," "); }catch(e){ return "—"; } }
-function statusOf(k){ if(k.status) return k.status; return (k.type||"").startsWith("premium") ? "active" : "active"; }
-function kbadge(type, status){ var cls = type==="free" ? "free" : "prem"; if(status==="pending") cls="pending"; if(status==="approved") cls="approved"; return "<span class="kbadge f "+cls+"">"+(type==="free"?"FREE":"PREM")+"</span>"; }
-function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
-function renderIssued(res){ var el=document.getElementById("issued"); var arr=(res&&res.generated)||[]; if(!arr.length){ el.innerHTML="<div class="ktbl-empty">No keys generated.</div>"; return; } var html="<div class="ktbl-wrap"><table class="ktbl"><thead><tr><th>KEY</th><th>TYPE</th><th>STATUS</th><th>EXPIRES</th><th>COPY</th></tr></thead><tbody>"; arr.forEach(k=>{ html+="<tr><td class="kcode">"+esc(k.key)+"</td><td>"+kbadge(k.type,k.status)+"</td><td>"+esc(statusOf(k))+"</td><td>"+fmtDate(k.expires)+"</td><td><button class="kcopy" data-k=\""+esc(k.key)+"\">COPY</button></td></tr>"; }); html+="</tbody></table></div>"; el.innerHTML=html; el.querySelectorAll(".kcopy").forEach(b=>b.onclick=async()=>{ try{await navigator.clipboard.writeText(b.dataset.k);var t=b.textContent;b.textContent="COPIED";b.classList.add("copied");setTimeout(()=>{b.textContent=t;b.classList.remove("copied");},1200);}catch(e){}}); document.getElementById("copyBtn").dataset.last=JSON.stringify(arr); document.getElementById("copyBtn").disabled=false; }
-function renderAllKeys(arr){ var el=document.getElementById("allkeys"); if(!arr.length){ el.innerHTML="<div class="ktbl-empty">No active keys.</div>"; return; } arr.sort((a,b)=>(b.created||0)-(a.created||0)); var html="<div class="ktbl-wrap"><table class="ktbl"><thead><tr><th>KEY</th><th>TYPE</th><th>STATUS</th><th>EXPIRES</th><th>USED</th><th>COPY</th></tr></thead><tbody>"; arr.forEach(k=>{ html+="<tr><td class="kcode">"+esc(k.key)+"</td><td>"+kbadge(k.type,k.status)+"</td><td>"+esc(statusOf(k))+"</td><td>"+fmtDate(k.expires)+"</td><td>"+(k.used?"yes":"no")+"</td><td><button class="kcopy" data-k=\""+esc(k.key)+"\">COPY</button></td></tr>"; }); html+="</tbody></table></div>"; el.innerHTML=html; el.querySelectorAll(".kcopy").forEach(b=>b.onclick=async()=>{ try{await navigator.clipboard.writeText(b.dataset.k);var t=b.textContent;b.textContent="COPIED";b.classList.add("copied");setTimeout(()=>{b.textContent=t;b.classList.remove("copied");},1200);}catch(e){}}); }
-function renderPending(arr){ var el=document.getElementById("pending"); if(!arr.length){ el.innerHTML="<div class="ktbl-empty">No pending requests.</div>"; return; } var html="<div class="ktbl-wrap"><table class="ktbl"><thead><tr><th>EMAIL</th><th>PLAN</th><th>HASH</th><th>SUBMITTED</th><th>ACTION</th></tr></thead><tbody>"; arr.forEach(r=>{ html+="<tr><td>"+esc(r.email||"—")+"</td><td>"+kbadge(r.plan||"premium","pending")+"</td><td class="kcode" style="font-size:10px">"+esc((r.tx||"").slice(0,40))+"</td><td>"+fmtDate(r.created)+"</td><td><button class="kact" data-id=\""+esc(r.id)+"\">APPROVE</button></td></tr>"; }); html+="</tbody></table></div>"; el.innerHTML=html; el.querySelectorAll(".kact").forEach(b=>b.onclick=async()=>{ if(!confirm("Approve this request and issue a key?"))return; var res=await api("approve",{id:b.dataset.id}); if(res.ok){ b.textContent="ISSUED"; b.disabled=true; refreshAll(); } else { alert("Approve failed: "+(res.error||"unknown")); } }); }
-
-document.getElementById("loadPending").onclick = () => refreshAll();
-document.getElementById("loadAll").onclick = () => refreshAll();
-refreshAll();
-</script>
-</body></html>`;
-  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "access-control-allow-origin": "*" } });
-}
-
-// Strip trailing slash, then resolve a static path to its .html file
+// ============== static resolver ==============
 function resolveStatic(path) {
   let p = path;
   while (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
@@ -215,215 +20,384 @@ function resolveStatic(path) {
   return null;
 }
 
+// ============== owner panel HTML ==============
+function ownerPage(token) {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Owner Panel — Ultimate License</title>
+<link rel="stylesheet" href="/style">
+<style>
+.owner-wrap{max-width:920px;margin:0 auto;padding:24px 18px 60px}
+.owner-head{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.owner-mark{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#D4AF37,#8a6f1a);display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b0d12;font-family:Inter,system-ui,sans-serif;font-size:20px;box-shadow:0 8px 24px rgba(212,175,55,.25)}
+.owner-title{font-size:22px;font-weight:700;color:#fff;font-family:Inter,system-ui,sans-serif}
+.owner-sub{font-size:12px;color:#9aa3b2;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+@media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:rgba(20,24,34,.55);backdrop-filter:blur(14px);border:1px solid rgba(212,175,55,.12);border-radius:14px;padding:16px 14px;position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;top:0;left:0;width:36px;height:3px;background:linear-gradient(90deg,#D4AF37,transparent)}
+.stat .num{font-size:26px;font-weight:800;color:#fff;font-family:Inter,system-ui,sans-serif}
+.stat .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#9aa3b2;margin-top:4px}
+.card{background:rgba(20,24,34,.55);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:22px;margin-bottom:18px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section{font-size:16px;font-weight:700;color:#fff;margin:0;font-family:Inter,system-ui,sans-serif}
+.pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#D4AF37;padding:5px 10px;border:1px solid rgba(212,175,55,.35);border-radius:999px;background:rgba(212,175,55,.08)}
+.owner-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.owner-grid{grid-template-columns:1fr}}
+.owner-grid label{display:flex;flex-direction:column;gap:6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9aa3b2}
+.owner-grid select,.owner-grid input{background:rgba(11,13,18,.6);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:11px 13px;color:#fff;font-size:14px;font-family:Inter,system-ui,sans-serif;outline:none}
+.owner-grid select:focus,.owner-grid input:focus{border-color:rgba(212,175,55,.55)}
+.row-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.btn{padding:12px 22px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:Inter,system-ui,sans-serif;transition:transform .15s,box-shadow .15s}
+.btn.primary{background:linear-gradient(135deg,#D4AF37,#a8861f);color:#0b0d12;box-shadow:0 6px 18px rgba(212,175,55,.25)}
+.btn.primary:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(212,175,55,.35)}
+.btn.ghost{background:rgba(255,255,255,.04);color:#fff;border:1px solid rgba(255,255,255,.1)}
+.btn.ghost:hover{background:rgba(255,255,255,.08)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.output{margin-top:16px;background:rgba(11,13,18,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px;min-height:60px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:#cdd5e0;white-space:pre-wrap;word-break:break-all}
+.output .ok{color:#4ade80}
+.output .err{color:#f87171}
+.kcard{background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.25);border-radius:10px;padding:14px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.kcard .kcode{font-family:ui-monospace,Menlo,Consolas,monospace;color:#D4AF37;font-weight:700;font-size:14px;word-break:break-all;flex:1;min-width:200px}
+.kcard .kmeta{font-size:11px;color:#9aa3b2;margin-top:4px}
+.kcard .kbtn{padding:8px 14px;font-size:12px}
+.pendrow{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pendrow .pinfo{font-size:13px;color:#cdd5e0;flex:1;min-width:200px}
+.pendrow .pinfo b{color:#fff}
+.pendrow .pmeta{font-size:11px;color:#9aa3b2;margin-top:3px;font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.empty{color:#6b7280;font-style:italic;font-size:13px}
+.footer-note{margin-top:30px;text-align:center;font-size:11px;color:#6b7280}
+.kbd{font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.05);padding:2px 8px;border-radius:5px}
+</style></head><body>
+<div class="owner-wrap">
+<div class="owner-head">
+  <div class="owner-mark">UL</div>
+  <div><div class="owner-title">Ultimate License</div><div class="owner-sub">Owner Control Panel</div></div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="num" id="statTotal">—</div><div class="lbl">Active Keys</div></div>
+  <div class="stat"><div class="num" id="statFree">—</div><div class="lbl">Free Trials</div></div>
+  <div class="stat"><div class="num" id="statPrem">—</div><div class="lbl">Premium</div></div>
+  <div class="stat"><div class="num" id="statPend">—</div><div class="lbl">Pending</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2 class="section">Issue Keys</h2><span class="pill">Generate</span></div>
+  <form id="issueForm">
+    <div class="owner-grid">
+      <label>Type<select name="type" id="type">
+        <option value="free">Free Trial · 2 days</option>
+        <option value="premium_2w">Premium · $3 · 2 weeks</option>
+        <option value="premium_1m">Premium · $5 · 1 month</option>
+      </select></label>
+      <label>Plan<select name="plan" id="plan">
+        <option value="single">Single key</option>
+        <option value="bulk">Bulk</option>
+      </select></label>
+      <label>Count<input type="number" name="count" value="1" min="1" max="500"></label>
+      <label>Note<input type="text" name="note" placeholder="optional"></label>
+    </div>
+    <div class="row-actions">
+      <button class="btn primary" type="submit">Generate Keys</button>
+      <button class="btn ghost" type="button" id="copyBtn" disabled>Copy Last</button>
+      <button class="btn ghost" type="button" id="refreshAllBtn">Refresh</button>
+    </div>
+  </form>
+  <div id="issued" class="output">Generated keys will appear here.</div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2 class="section">Pending Premium Approvals</h2></div>
+  <div id="pending" class="output">No pending requests.</div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2 class="section">All Active Keys</h2></div>
+  <div id="allkeys" class="output">No active keys.</div>
+</div>
+
+<div class="footer-note"><span class="kbd">/owner/&lt;token&gt;</span> · keep this URL private.</div>
+</div>
+
+<script>
+const TOKEN = ${JSON.stringify(token)};
+const API = (sub) => "/owner/" + TOKEN + "/api/" + sub;
+
+async function api(sub, body) {
+  try {
+    const r = await fetch(API(sub), { method: "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : "{}" });
+    return await r.json();
+  } catch (e) { return { ok: false, error: String(e) }; }
+}
+
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function showStats(all, pending) {
+  const total = all.length;
+  const free = all.filter(k => k.type === "free").length;
+  const prem = all.filter(k => (k.type || "").startsWith("premium")).length;
+  document.getElementById("statTotal").textContent = total;
+  document.getElementById("statFree").textContent = free;
+  document.getElementById("statPrem").textContent = prem;
+  document.getElementById("statPend").textContent = pending.length;
+}
+
+function showIssued(res) {
+  const el = document.getElementById("issued");
+  if (!res.ok) { el.innerHTML = '<span class="err">Error: ' + esc(res.error || "unknown") + '</span>'; return; }
+  const arr = res.generated || [];
+  if (!arr.length) { el.innerHTML = '<span class="empty">No keys generated.</span>'; return; }
+  let html = "";
+  arr.forEach(k => {
+    const exp = k.expires ? new Date(k.expires).toISOString().slice(0,16).replace("T"," ") : "—";
+    const tag = k.type === "free" ? "FREE" : "PREM";
+    html += '<div class="kcard"><div><div class="kcode">' + esc(k.key) + '</div><div class="kmeta">' + tag + ' · expires ' + exp + (k.note ? ' · ' + esc(k.note) : '') + '</div></div><button class="btn primary kbtn" data-k="' + esc(k.key) + '">Copy</button></div>';
+  });
+  el.innerHTML = html;
+  el.querySelectorAll(".kbtn").forEach(b => {
+    b.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.k);
+        const t = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = t, 1200);
+      } catch (e) { alert("Copy failed: " + e); }
+    };
+  });
+  document.getElementById("copyBtn").disabled = false;
+  window.__lastIssued = arr;
+}
+
+function showAllKeys(arr) {
+  const el = document.getElementById("allkeys");
+  if (!arr.length) { el.innerHTML = '<span class="empty">No active keys.</span>'; return; }
+  arr.sort((a,b) => (b.created||0) - (a.created||0));
+  let html = "";
+  arr.forEach(k => {
+    const exp = k.expires ? new Date(k.expires).toISOString().slice(0,16).replace("T"," ") : "—";
+    const tag = k.type === "free" ? "FREE" : "PREM";
+    html += '<div class="kcard"><div><div class="kcode">' + esc(k.key) + '</div><div class="kmeta">' + tag + ' · expires ' + exp + (k.used ? ' · USED' : '') + '</div></div><button class="btn primary kbtn" data-k="' + esc(k.key) + '">Copy</button></div>';
+  });
+  el.innerHTML = html;
+  el.querySelectorAll(".kbtn").forEach(b => {
+    b.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.k);
+        const t = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = t, 1200);
+      } catch (e) {}
+    };
+  });
+}
+
+function showPending(arr) {
+  const el = document.getElementById("pending");
+  if (!arr.length) { el.innerHTML = '<span class="empty">No pending requests.</span>'; return; }
+  let html = "";
+  arr.forEach(r => {
+    html += '<div class="pendrow"><div class="pinfo"><b>' + esc(r.email || "—") + '</b> · ' + esc(r.plan || "premium") + '<div class="pmeta">' + esc((r.tx || "").slice(0, 64)) + '</div></div><button class="btn primary" data-id="' + esc(r.id) + '">Approve</button></div>';
+  });
+  el.innerHTML = html;
+  el.querySelectorAll("button[data-id]").forEach(b => {
+    b.onclick = async () => {
+      if (!confirm("Approve this request and issue a key?")) return;
+      b.disabled = true; b.textContent = "...";
+      const res = await api("approve", { id: b.dataset.id });
+      if (res.ok) { b.textContent = "Issued"; refreshAll(); }
+      else { alert("Approve failed: " + (res.error || "unknown")); b.disabled = false; b.textContent = "Approve"; }
+    };
+  });
+}
+
+async function refreshAll() {
+  const [allRes, pendRes] = await Promise.all([api("list"), api("pending")]);
+  const all = (allRes && allRes.keys) || [];
+  const pending = (pendRes && pendRes.pending) || [];
+  showStats(all, pending);
+  showAllKeys(all);
+  showPending(pending);
+}
+
+document.getElementById("issueForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const data = { type: f.get("type"), note: f.get("note") || "" };
+  if (f.get("plan") === "bulk") data.count = parseInt(f.get("count") || "1", 10);
+  const res = await api("issue", data);
+  showIssued(res);
+  refreshAll();
+});
+
+document.getElementById("copyBtn").onclick = async () => {
+  if (!window.__lastIssued) return;
+  const txt = window.__lastIssued.map(k => k.key).join("\n");
+  try { await navigator.clipboard.writeText(txt); const t = document.getElementById("copyBtn").textContent; document.getElementById("copyBtn").textContent = "Copied"; setTimeout(() => document.getElementById("copyBtn").textContent = t, 1200); } catch (e) {}
+};
+
+document.getElementById("refreshAllBtn").onclick = () => refreshAll();
+refreshAll();
+</script>
+</body></html>`;
+}
+
+// ============== API routes ==============
+async function handleVerify(request, env, ip) {
+  let body = {};
+  try { body = await request.json(); } catch (e) {}
+  const key = (body.key || "").trim();
+  if (!key) return j({ ok: false, error: "missing_key" });
+  try {
+    const raw = env.KEYS ? await env.KEYS.get("key:" + key) : null;
+    if (!raw) return j({ ok: false, error: "invalid" });
+    const data = JSON.parse(raw);
+    if (data.banned) return j({ ok: false, error: "banned" });
+    if (data.revoked) return j({ ok: false, error: "revoked" });
+    if (data.expires && data.expires < Date.now()) return j({ ok: false, error: "expired" });
+    if (data.type === "free") {
+      const dev = body.device || "";
+      if (!dev) return j({ ok: false, error: "missing_device" });
+      if (data.device && data.device !== dev) return j({ ok: false, error: "device_locked" });
+      if (data.ip && data.ip !== ip) return j({ ok: false, error: "device_locked" });
+      if (!data.device) { data.device = dev; data.ip = ip; data.used = true; await env.KEYS.put("key:" + key, JSON.stringify(data), { expirationTtl: Math.max(60, Math.floor((data.expires - Date.now())/1000) + 86400) }); }
+    }
+    return j({ ok: true, type: data.type, expires: data.expires, note: data.note || "" });
+  } catch (e) { return j({ ok: false, error: "server_error" }); }
+}
+
+async function handleFreeStep(request, env, ip) {
+  let body = {};
+  try { body = await request.json(); } catch (e) {}
+  const step = parseInt(body.step || "0", 10);
+  const device = body.device || "";
+  if (step < 1 || step > 8) return j({ ok: false, error: "bad_step" });
+  const cookie = request.headers.get("cookie") || "";
+  const m = cookie.match(/ult_step=(\d+)/);
+  const cur = m ? parseInt(m[1], 10) : 0;
+  if (step !== cur + 1) return j({ ok: false, error: "chain_incomplete", current: cur });
+  if (step === 8) {
+    const key = "ULT-FREE-" + rand(4) + "-" + rand(4) + "-" + rand(4);
+    const payload = { key, type: "free", device, ip, created: Date.now(), expires: Date.now() + 2 * 86400 * 1000, status: "active", used: false };
+    try { if (env.KEYS) await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: 3 * 86400 }); } catch (e) {}
+    const r = j({ ok: true, done: true, key });
+    r.headers.append("set-cookie", "ult_step=0; Path=/; Max-Age=86400; SameSite=Lax");
+    return r;
+  }
+  const r = j({ ok: true, step });
+  r.headers.append("set-cookie", "ult_step=" + step + "; Path=/; Max-Age=86400; SameSite=Lax");
+  return r;
+}
+
+async function handlePremiumSubmit(request, env) {
+  let body = {};
+  try { body = await request.json(); } catch (e) {}
+  const email = (body.email || "").trim();
+  const plan = (body.plan || "premium_2w").trim();
+  const tx = (body.tx || "").trim();
+  const note = (body.note || "").trim();
+  if (!email || !tx) return j({ ok: false, error: "missing_fields" });
+  const id = uuid();
+  const payload = { id, email, plan, tx, note, created: Date.now(), status: "pending" };
+  try { if (env.KEYS) await env.KEYS.put("prem_req:" + id, JSON.stringify(payload), { expirationTtl: 7 * 86400 }); } catch (e) {}
+  return j({ ok: true, id });
+}
+
+async function handleOwnerIssue(request, env) {
+  let body = {};
+  try { body = await request.json(); } catch (e) {}
+  const type = body.type || "free";
+  const note = body.note || "";
+  const count = Math.max(1, Math.min(500, parseInt(body.count || "1", 10)));
+  const ttlDays = type === "free" ? 2 : (type === "premium_2w" ? 14 : 30);
+  const brand = type === "free" ? "FREE" : "PREM";
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const key = `ULT-${brand}-${rand(4)}-${rand(4)}-${rand(4)}`;
+    const payload = { key, type, note, created: Date.now(), expires: Date.now() + ttlDays * 86400 * 1000, status: "active", used: false };
+    try { if (env.KEYS) await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
+    out.push(payload);
+  }
+  return j({ ok: true, generated: out });
+}
+
+async function handleOwnerList(env) {
+  try {
+    if (!env.KEYS) return j({ ok: false, error: "no_kv" });
+    const list = await env.KEYS.list({ prefix: "key:" });
+    const keys = [];
+    for (const k of list.keys) {
+      const v = await env.KEYS.get(k.name);
+      if (v) keys.push(JSON.parse(v));
+    }
+    return j({ ok: true, count: keys.length, keys });
+  } catch (e) { return j({ ok: false, error: String(e) }); }
+}
+
+async function handleOwnerPending(env) {
+  try {
+    if (!env.KEYS) return j({ ok: false, error: "no_kv" });
+    const list = await env.KEYS.list({ prefix: "prem_req:" });
+    const pending = [];
+    for (const k of list.keys) {
+      const v = await env.KEYS.get(k.name);
+      if (v) { const r = JSON.parse(v); if (r.status === "pending") pending.push(r); }
+    }
+    return j({ ok: true, count: pending.length, pending });
+  } catch (e) { return j({ ok: false, error: String(e) }); }
+}
+
+async function handleOwnerApprove(request, env) {
+  let body = {};
+  try { body = await request.json(); } catch (e) {}
+  const id = body.id || "";
+  if (!id) return j({ ok: false, error: "missing_id" });
+  try {
+    if (!env.KEYS) return j({ ok: false, error: "no_kv" });
+    const raw = await env.KEYS.get("prem_req:" + id);
+    if (!raw) return j({ ok: false, error: "not_found" });
+    const req = JSON.parse(raw);
+    if (req.status !== "pending") return j({ ok: false, error: "already_processed" });
+    const ttlDays = req.plan === "premium_1m" ? 30 : 14;
+    const key = "ULT-PREM-" + rand(4) + "-" + rand(4) + "-" + rand(4);
+    const payload = { key, type: req.plan, note: "auto-approved:" + (req.email || ""), created: Date.now(), expires: Date.now() + ttlDays * 86400 * 1000, status: "active", used: false };
+    await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 });
+    req.status = "approved"; req.key = key; req.approved = Date.now();
+    await env.KEYS.put("prem_req:" + id, JSON.stringify(req), { expirationTtl: 7 * 86400 });
+    return j({ ok: true, key, request: req });
+  } catch (e) { return j({ ok: false, error: String(e) }); }
+}
+
+// ============== router ==============
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
   const ownerToken = env.OWNER_TOKEN || "";
 
-  // ====== Owner routes ======
-  const ownerBase = `/owner/${ownerToken}`;
-  if (path === ownerBase || path === ownerBase + "/") return ownerPage(env, ownerToken);
+  const ownerBase = "/owner/" + ownerToken;
+  if (path === ownerBase || path === ownerBase + "/") {
+    return new Response(ownerPage(ownerToken), { headers: { "content-type": "text/html; charset=utf-8" } });
+  }
   if (path.startsWith(ownerBase + "/api/")) {
     const sub = path.substring((ownerBase + "/api/").length);
-    const body = request.method === "POST" ? await request.json().catch(() => ({})) : {};
-    if (sub === "issue") {
-      const type = body.type || "free";
-      const note = body.note || "";
-      const count = Math.max(1, Math.min(500, parseInt(body.count || "1", 10)));
-      const ttlDays = type === "free" ? 2 : (type === "premium_2w" ? 14 : 30);
-      const brand = type === "free" ? "FREE" : "PREM";
-      const out = [];
-      for (let i = 0; i < count; i++) {
-        const key = `ULT-${brand}-${rand(4)}-${rand(4)}-${rand(4)}`;
-        const payload = { key, type, note, created: Date.now(), expires: Date.now() + ttlDays * 86400 * 1000, status: "active", used: false };
-        try { if (env.KEYS) await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
-        out.push(payload);
-      }
-      return j({ ok: true, generated: out });
-    }
-    if (sub === "list") {
-      try {
-        if (!env.KEYS) return j({ ok: false, error: "no_kv" });
-        const list = await env.KEYS.list({ prefix: "key:" });
-        const keys = [];
-        for (const k of list.keys) {
-          const v = await env.KEYS.get(k.name);
-          if (v) keys.push(JSON.parse(v));
-        }
-        return j({ ok: true, count: keys.length, keys });
-      } catch (e) { return j({ ok: false, error: String(e) }); }
-    }
-    if (sub === "pending") {
-      try {
-        if (!env.KEYS) return j({ ok: false, error: "no_kv" });
-        const list = await env.KEYS.list({ prefix: "prem_req:" });
-        const pending = [];
-        for (const k of list.keys) {
-          const v = await env.KEYS.get(k.name);
-          if (v) pending.push(JSON.parse(v));
-        }
-        return j({ ok: true, count: pending.length, pending });
-      } catch (e) { return j({ ok: false, error: String(e) }); }
-    }
-    if (sub === "approve") {
-      const reqId = body.reqId;
-      const ttlDays = body.type === "premium_2w" ? 14 : 30;
-      const newKey = `ULT-PREM-${rand(4)}-${rand(4)}-${rand(4)}`;
-      const payload = { key: newKey, type: body.type || "premium_1m", note: "manual approve", created: Date.now(), expires: Date.now() + ttlDays * 86400 * 1000, status: "active", used: false };
-      try { if (env.KEYS) await env.KEYS.put("key:" + newKey, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
-      if (reqId && env.KEYS) await env.KEYS.delete("prem_req:" + reqId);
-      return j({ ok: true, key: newKey, expires: payload.expires });
-    }
+    if (sub === "issue") return handleOwnerIssue(request, env);
+    if (sub === "list") return handleOwnerList(env);
+    if (sub === "pending") return handleOwnerPending(env);
+    if (sub === "approve") return handleOwnerApprove(request, env);
+    return j({ ok: false, error: "unknown_op" });
   }
 
-  // ====== Public API ======
-  if (path === "/api/me") {
-    let did = await getDeviceId(request);
-    if (!did) did = await newDevice();
-    const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-    setDeviceCookie(headers, did);
-    return new Response(JSON.stringify({ deviceId: did, ip, ts: Date.now() }), { status: 200, headers });
-  }
+  if (path === "/api/verify-key" && request.method === "POST") return handleVerify(request, env, ip);
+  if (path === "/api/free-step" && request.method === "POST") return handleFreeStep(request, env, ip);
+  if (path === "/api/premium-submit" && request.method === "POST") return handlePremiumSubmit(request, env);
 
-  if (path === "/api/free/start") {
-    let did = await getDeviceId(request);
-    if (!did) did = await newDevice();
-    const id = "fs_" + rand(8);
-    const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-    setDeviceCookie(headers, did);
-    if (env.KEYS) {
-      try { await env.KEYS.put("fstep:" + id, JSON.stringify({ deviceId: did, ip, step: 0, started: Date.now() }), { expirationTtl: 60 * 60 * 24 }); } catch (e) {}
-    }
-    await audit(env, "free_start", { deviceId: did, ip });
-    return new Response(JSON.stringify({ ok: true, flowId: id, total: 8, deviceId: did }), { status: 200, headers });
-  }
+  if (request.method !== "GET" && request.method !== "HEAD") return j({ ok: false, error: "method_not_allowed" });
 
-  if (path === "/api/free/step") {
-    const body = await request.json().catch(() => ({}));
-    const flowId = body.flowId, step = parseInt(body.step || "0", 10);
-    let did = await getDeviceId(request);
-    if (!did) did = await newDevice();
-    if (!env.KEYS) return j({ ok: false, error: "no KV" });
-    const raw = await env.KEYS.get("fstep:" + flowId);
-    if (!raw) return j({ ok: false, error: "flow_expired" });
-    const data = JSON.parse(raw);
-    if (data.deviceId !== did) return j({ ok: false, error: "device_mismatch" });
-    if (data.step + 1 !== step) return j({ ok: false, error: "out_of_order", expected: data.step + 1 });
-    data.step = step;
-    await env.KEYS.put("fstep:" + flowId, JSON.stringify(data), { expirationTtl: 60 * 60 * 24 });
-    const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-    setDeviceCookie(headers, did);
-    return new Response(JSON.stringify({ ok: true, step, complete: step >= 8 }), { status: 200, headers });
+  const resolved = resolveStatic(path);
+  if (!resolved) return new Response("not_found", { status: 404, headers: { "access-control-allow-origin": "*" } });
+  try {
+    const r = await env.ASSETS.fetch(new Request(new URL(resolved, request.url)));
+    return new Response(r.body, r);
+  } catch (e) {
+    return new Response("asset_error: " + String(e), { status: 500 });
   }
-
-  if (path === "/api/free/claim") {
-    let did = await getDeviceId(request);
-    if (!did) did = await newDevice();
-    const body = await request.json().catch(() => ({}));
-    const flowId = body.flowId;
-    if (!env.KEYS) return j({ ok: false, error: "no_kv" });
-    const raw = await env.KEYS.get("fstep:" + flowId);
-    if (!raw) return j({ ok: false, error: "flow_expired" });
-    const data = JSON.parse(raw);
-    if (data.deviceId !== did) return j({ ok: false, error: "device_mismatch" });
-    if (data.step < 8) return j({ ok: false, error: "chain_incomplete" });
-    const key = `ULT-FREE-${rand(4)}-${rand(4)}-${rand(4)}`;
-    const payload = { key, type: "free", deviceId: did, ip, created: Date.now(), expires: Date.now() + 2 * 86400 * 1000, status: "active", used: false };
-    try { await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: 3 * 86400 }); } catch (e) {}
-    await env.KEYS.delete("fstep:" + flowId);
-    await audit(env, "free_claim", { deviceId: did, ip, key });
-    const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-    setDeviceCookie(headers, did);
-    return new Response(JSON.stringify({ ok: true, key, expires: payload.expires, type: "free" }), { status: 200, headers });
-  }
-
-  if (path === "/api/verify-key") {
-    const body = await request.json().catch(() => ({}));
-    const key = (body.key || "").trim().toUpperCase();
-    if (!key) return j({ ok: false, valid: false, reason: "no_key" });
-    if (!env.KEYS) return j({ ok: false, valid: false, reason: "no_kv" });
-    const raw = await env.KEYS.get("key:" + key);
-    if (!raw) return j({ ok: false, valid: false, reason: "unknown" });
-    const data = JSON.parse(raw);
-    if (data.status !== "active") return j({ ok: false, valid: false, reason: "revoked" });
-    if (data.expires < Date.now()) return j({ ok: false, valid: false, reason: "expired" });
-    if (data.type === "free") {
-      let did = await getDeviceId(request);
-      if (!did) did = await newDevice();
-      if (data.deviceId && data.deviceId !== did) return j({ ok: false, valid: false, reason: "device_locked" });
-      if (data.ip && data.ip !== ip && !data.lastIps?.includes(ip)) {
-        data.lastIps = data.lastIps || []; data.lastIps.push(ip);
-        try { await env.KEYS.put("key:" + key, JSON.stringify(data), { expirationTtl: 3 * 86400 }); } catch (e) {}
-      }
-      if (!data.used) { data.used = true; try { await env.KEYS.put("key:" + key, JSON.stringify(data), { expirationTtl: 3 * 86400 }); } catch (e) {} }
-      const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-      setDeviceCookie(headers, did);
-      return new Response(JSON.stringify({ ok: true, valid: true, type: "free", tier: "trial", expires: data.expires }), { status: 200, headers });
-    }
-    if (data.type.startsWith("premium")) {
-      const tier = data.type === "premium_2w" ? "premium_2w" : "premium_1m";
-      const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-      let did = await getDeviceId(request);
-      if (!did) did = await newDevice();
-      setDeviceCookie(headers, did);
-      return new Response(JSON.stringify({ ok: true, valid: true, type: "premium", tier, expires: data.expires }), { status: 200, headers });
-    }
-    return j({ ok: false, valid: false, reason: "unknown_type" });
-  }
-
-  if (path === "/api/premium/submit") {
-    const body = await request.json().catch(() => ({}));
-    const { plan, txHash, network, address } = body;
-    let did = await getDeviceId(request);
-    if (!did) did = await newDevice();
-    if (!plan || !["premium_2w", "premium_1m"].includes(plan)) return j({ ok: false, error: "bad_plan" });
-    if (!txHash || txHash.length < 10) return j({ ok: false, error: "bad_hash" });
-    if (!env.KEYS) return j({ ok: false, error: "no_kv" });
-    const reqId = "pr_" + rand(8);
-    const payload = { reqId, plan, txHash: txHash.toLowerCase(), network: network || "unknown", address: address || "", deviceId: did, ip, ts: Date.now(), status: "pending" };
-    try { await env.KEYS.put("prem_req:" + reqId, JSON.stringify(payload), { expirationTtl: 60 * 60 * 24 * 14 }); } catch (e) {}
-    await audit(env, "premium_submit", { deviceId: did, ip, reqId });
-    const headers = new Headers({ "content-type": "application/json", "access-control-allow-origin": "*" });
-    setDeviceCookie(headers, did);
-    return new Response(JSON.stringify({ ok: true, reqId, status: "pending", auto_confirm: false, message: "Awaiting owner approval (typically under 30 min)" }), { status: 200, headers });
-  }
-
-  if (path === "/api/spenda/webhook") {
-    const secret = request.headers.get("x-webhook-secret");
-    if (secret !== (env.SPENDA_WEBHOOK_SECRET || "")) return j({ ok: false, error: "auth" });
-    const body = await request.json().catch(() => ({}));
-    const { plan, txHash, deviceId, ip } = body;
-    if (!plan || !txHash || !env.KEYS) return j({ ok: false, error: "bad_data" });
-    const key = `ULT-PREM-${rand(4)}-${rand(4)}-${rand(4)}`;
-    const ttlDays = plan === "premium_2w" ? 14 : 30;
-    const payload = { key, type: plan, deviceId: deviceId || "", ip: ip || "", created: Date.now(), expires: Date.now() + ttlDays * 86400 * 1000, status: "active", used: false, source: "spenda_auto" };
-    try { await env.KEYS.put("key:" + key, JSON.stringify(payload), { expirationTtl: ttlDays * 86400 + 86400 }); } catch (e) {}
-    await audit(env, "spenda_auto_issue", { key, plan });
-    return j({ ok: true, key, expires: payload.expires });
-  }
-
-  // ====== Static fallback — supports /free, /premium, /index, .html versions ======
-  const staticFile = resolveStatic(path);
-  if (staticFile && env.ASSETS) {
-    try { return await env.ASSETS.fetch(new URL(staticFile, request.url)); } catch (e) {}
-  }
-
-  return j({ ok: false, error: "not_found", path }, 404);
 }
 
-export default {
-  async fetch(request, env) {
-    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type", "access-control-allow-methods": "GET,POST,OPTIONS" } });
-    try {
-      const response = await route(request, env);
-      if (response) return response;
-    } catch (e) {
-      return new Response(JSON.stringify({ ok: false, error: "worker_error", message: String(e) }), { status: 500, headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
-    }
-    if (env.ASSETS) {
-      try { return await env.ASSETS.fetch(request); } catch (e) {}
-    }
-    return new Response("Not Found", { status: 404, headers: { "access-control-allow-origin": "*" } });
-  }
-};
+export default { fetch: route };
