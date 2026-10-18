@@ -158,8 +158,8 @@ async function refreshAll() {
   const all = allRes.keys || [];
   const pending = pendRes.pending || [];
   renderStats(all, pending);
-  document.getElementById("allkeys").textContent = JSON.stringify(all, null, 2);
-  document.getElementById("pending").textContent = JSON.stringify(pending, null, 2);
+  renderAllKeys(all);
+  renderPending(pending);
 }
 
 document.getElementById("issueForm").addEventListener("submit", async (e) => {
@@ -169,7 +169,7 @@ document.getElementById("issueForm").addEventListener("submit", async (e) => {
   const data = { type: f.get("type"), note: f.get("note") || "" };
   if (plan === "bulk") data.count = parseInt(f.get("count") || "1", 10);
   const res = await api("issue", data);
-  document.getElementById("issued").textContent = JSON.stringify(res, null, 2);
+  renderIssued(res);
   const btn = document.getElementById("copyBtn");
   btn.disabled = !(res.generated && res.generated.length);
   btn.dataset.last = JSON.stringify(res.generated || []);
@@ -181,6 +181,14 @@ document.getElementById("copyBtn").onclick = async () => {
   const txt = data.map(k => k.key).join("\\n");
   try { await navigator.clipboard.writeText(txt); } catch (e) {}
 };
+
+function fmtDate(ms){ if(!ms) return "—"; try{ return new Date(ms).toISOString().slice(0,16).replace("T"," "); }catch(e){ return "—"; } }
+function statusOf(k){ if(k.status) return k.status; return (k.type||"").startsWith("premium") ? "active" : "active"; }
+function kbadge(type, status){ var cls = type==="free" ? "free" : "prem"; if(status==="pending") cls="pending"; if(status==="approved") cls="approved"; return "<span class="kbadge f "+cls+"">"+(type==="free"?"FREE":"PREM")+"</span>"; }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function renderIssued(res){ var el=document.getElementById("issued"); var arr=(res&&res.generated)||[]; if(!arr.length){ el.innerHTML="<div class="ktbl-empty">No keys generated.</div>"; return; } var html="<div class="ktbl-wrap"><table class="ktbl"><thead><tr><th>KEY</th><th>TYPE</th><th>STATUS</th><th>EXPIRES</th><th>COPY</th></tr></thead><tbody>"; arr.forEach(k=>{ html+="<tr><td class="kcode">"+esc(k.key)+"</td><td>"+kbadge(k.type,k.status)+"</td><td>"+esc(statusOf(k))+"</td><td>"+fmtDate(k.expires)+"</td><td><button class="kcopy" data-k=\""+esc(k.key)+"\">COPY</button></td></tr>"; }); html+="</tbody></table></div>"; el.innerHTML=html; el.querySelectorAll(".kcopy").forEach(b=>b.onclick=async()=>{ try{await navigator.clipboard.writeText(b.dataset.k);var t=b.textContent;b.textContent="COPIED";b.classList.add("copied");setTimeout(()=>{b.textContent=t;b.classList.remove("copied");},1200);}catch(e){}}); document.getElementById("copyBtn").dataset.last=JSON.stringify(arr); document.getElementById("copyBtn").disabled=false; }
+function renderAllKeys(arr){ var el=document.getElementById("allkeys"); if(!arr.length){ el.innerHTML="<div class="ktbl-empty">No active keys.</div>"; return; } arr.sort((a,b)=>(b.created||0)-(a.created||0)); var html="<div class="ktbl-wrap"><table class="ktbl"><thead><tr><th>KEY</th><th>TYPE</th><th>STATUS</th><th>EXPIRES</th><th>USED</th><th>COPY</th></tr></thead><tbody>"; arr.forEach(k=>{ html+="<tr><td class="kcode">"+esc(k.key)+"</td><td>"+kbadge(k.type,k.status)+"</td><td>"+esc(statusOf(k))+"</td><td>"+fmtDate(k.expires)+"</td><td>"+(k.used?"yes":"no")+"</td><td><button class="kcopy" data-k=\""+esc(k.key)+"\">COPY</button></td></tr>"; }); html+="</tbody></table></div>"; el.innerHTML=html; el.querySelectorAll(".kcopy").forEach(b=>b.onclick=async()=>{ try{await navigator.clipboard.writeText(b.dataset.k);var t=b.textContent;b.textContent="COPIED";b.classList.add("copied");setTimeout(()=>{b.textContent=t;b.classList.remove("copied");},1200);}catch(e){}}); }
+function renderPending(arr){ var el=document.getElementById("pending"); if(!arr.length){ el.innerHTML="<div class="ktbl-empty">No pending requests.</div>"; return; } var html="<div class="ktbl-wrap"><table class="ktbl"><thead><tr><th>EMAIL</th><th>PLAN</th><th>HASH</th><th>SUBMITTED</th><th>ACTION</th></tr></thead><tbody>"; arr.forEach(r=>{ html+="<tr><td>"+esc(r.email||"—")+"</td><td>"+kbadge(r.plan||"premium","pending")+"</td><td class="kcode" style="font-size:10px">"+esc((r.tx||"").slice(0,40))+"</td><td>"+fmtDate(r.created)+"</td><td><button class="kact" data-id=\""+esc(r.id)+"\">APPROVE</button></td></tr>"; }); html+="</tbody></table></div>"; el.innerHTML=html; el.querySelectorAll(".kact").forEach(b=>b.onclick=async()=>{ if(!confirm("Approve this request and issue a key?"))return; var res=await api("approve",{id:b.dataset.id}); if(res.ok){ b.textContent="ISSUED"; b.disabled=true; refreshAll(); } else { alert("Approve failed: "+(res.error||"unknown")); } }); }
 
 document.getElementById("loadPending").onclick = () => refreshAll();
 document.getElementById("loadAll").onclick = () => refreshAll();

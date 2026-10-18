@@ -42,3 +42,21 @@ footer a{color:var(--cyan);text-decoration:none}
 .addr{background:#000;border:1px solid var(--bd);border-radius:10px;padding:14px;margin-top:14px;font-family:monospace;font-size:12px;color:var(--cyan);word-break:break-all;cursor:pointer;transition:.15s}
 .addr:hover{border-color:var(--cyan)}
 @media(max-width:480px){.row{grid-template-columns:1fr}.hero h2{font-size:22px}}
+.ktbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.ktbl th{text-align:left;color:var(--tx2);font-weight:600;font-size:10px;letter-spacing:.15em;text-transform:uppercase;padding:10px 8px;border-bottom:1px solid var(--bd)}
+.ktbl td{padding:12px 8px;border-bottom:1px solid var(--bd);color:var(--tx);font-family:monospace;vertical-align:middle}
+.ktbl tr:last-child td{border-bottom:none}
+.ktbl tr:hover td{background:rgba(212,175,55,.04)}
+.ktbl .kcode{color:var(--gold);font-weight:600}
+.ktbl .kbadge{display:inline-block;font-size:9px;letter-spacing:.12em;padding:2px 6px;border-radius:4px;font-weight:700}
+.ktbl .kbadge.f.free{background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid rgba(0,212,255,.25)}
+.ktbl .kbadge.f.prem{background:rgba(212,175,55,.14);color:var(--gold);border:1px solid rgba(212,175,55,.3)}
+.ktbl .kbadge.f.pending{background:rgba(231,76,60,.12);color:#e74c3c;border:1px solid rgba(231,76,60,.25)}
+.ktbl .kbadge.f.approved{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.25)}
+.ktbl .kcopy{background:transparent;border:1px solid var(--bd);color:var(--cyan);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.1em;transition:.15s}
+.ktbl .kcopy:hover{border-color:var(--cyan);background:rgba(0,212,255,.06)}
+.ktbl .kcopy.copied{background:var(--gold);color:#000;border-color:var(--gold)}
+.ktbl-wrap{overflow-x:auto;margin-top:8px}
+.ktbl-empty{color:var(--tx2);font-size:12px;padding:14px;text-align:center}
+.ktbl .kact{background:linear-gradient(135deg,var(--gold),#b8941f);color:#000;border:none;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.08em}
+.ktbl .kact:hover{transform:translateY(-1px)}
