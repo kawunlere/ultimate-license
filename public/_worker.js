@@ -158,8 +158,8 @@ async function refreshAll() {
   const all = allRes.keys || [];
   const pending = pendRes.pending || [];
   renderStats(all, pending);
-  renderAllKeys(all);
-  renderPending(pending);
+  document.getElementById("allkeys").textContent = JSON.stringify(all, null, 2);
+  document.getElementById("pending").textContent = JSON.stringify(pending, null, 2);
 }
 
 document.getElementById("issueForm").addEventListener("submit", async (e) => {
@@ -169,7 +169,7 @@ document.getElementById("issueForm").addEventListener("submit", async (e) => {
   const data = { type: f.get("type"), note: f.get("note") || "" };
   if (plan === "bulk") data.count = parseInt(f.get("count") || "1", 10);
   const res = await api("issue", data);
-  renderIssued(res);
+  document.getElementById("issued").textContent = JSON.stringify(res, null, 2);
   const btn = document.getElementById("copyBtn");
   btn.disabled = !(res.generated && res.generated.length);
   btn.dataset.last = JSON.stringify(res.generated || []);
