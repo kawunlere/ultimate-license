@@ -199,6 +199,7 @@ function resolveStatic(path) {
     "/index": "/index.html",
     "/free": "/free.html",
     "/premium": "/premium.html",
+    "/donate": "/donate.html",
     "/style": "/style.css"
   };
   if (known[p]) return known[p];
