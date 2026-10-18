@@ -203,7 +203,7 @@ function resolveStatic(path) {
     "/style": "/style.css"
   };
   if (known[p]) return known[p];
-  if (p === "/index.html" || p === "/free.html" || p === "/premium.html" || p === "/style.css") return p;
+  if (p === "/index.html" || p === "/free.html" || p === "/premium.html" || p === "/donate.html" || p === "/style.css") return p;
   return null;
 }
 
